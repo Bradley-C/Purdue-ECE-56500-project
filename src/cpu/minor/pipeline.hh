@@ -81,10 +81,40 @@ class Pipeline : public Ticked
     Latch<ForwardLineData> f1ToF2;
     Latch<BranchData> f2ToF1;
     Latch<ForwardInstData> f2ToD;
-    Latch<ForwardInstData> dToE;
+    Latch<ForwardInstData> dToD2;
+    Latch<ForwardInstData> d2ToD3;
+    Latch<ForwardInstData> d3ToD4;
+    Latch<ForwardInstData> d4ToD5;
+    Latch<ForwardInstData> d5ToD6;
+    Latch<ForwardInstData> d6ToD7;
+    Latch<ForwardInstData> d7ToD8;
+    Latch<ForwardInstData> d8ToD9;
+    Latch<ForwardInstData> d9ToD10;
+    Latch<ForwardInstData> d10ToD11;
+    Latch<ForwardInstData> d11ToD12;
+    Latch<ForwardInstData> d12ToD13;
+    Latch<ForwardInstData> d13ToD14;
+    Latch<ForwardInstData> d14ToD15;
+    Latch<ForwardInstData> d15ToD16;
+    Latch<ForwardInstData> d16ToE;
     Latch<BranchData> eToF1;
 
     Execute execute;
+    Decode decode16;
+    Decode decode15;
+    Decode decode14;
+    Decode decode13;
+    Decode decode12;
+    Decode decode11;
+    Decode decode10;
+    Decode decode9;
+    Decode decode8;
+    Decode decode7;
+    Decode decode6;
+    Decode decode5;
+    Decode decode4;
+    Decode decode3;
+    Decode decode2;
     Decode decode;
     Fetch2 fetch2;
     Fetch1 fetch1;
@@ -101,7 +131,11 @@ class Pipeline : public Ticked
         /* A stage representing wakeup of the whole processor */
         CPUStageId = 0,
         /* Real pipeline stages */
-        Fetch1StageId, Fetch2StageId, DecodeStageId, ExecuteStageId,
+        Fetch1StageId, Fetch2StageId, DecodeStage1Id, DecodeStage2Id,
+        DecodeStage3Id, DecodeStage4Id, DecodeStage5Id, DecodeStage6Id,
+        DecodeStage7Id, DecodeStage8Id, DecodeStage9Id, DecodeStage10Id,
+        DecodeStage11Id, DecodeStage12Id, DecodeStage13Id, DecodeStage14Id,
+        DecodeStage15Id, DecodeStage16Id, ExecuteStageId,
         Num_StageId /* Stage count */
     };
 

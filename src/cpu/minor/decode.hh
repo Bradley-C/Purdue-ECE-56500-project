@@ -148,7 +148,22 @@ class Decode : public Named
 
   public:
     /** Pass on input/buffer data to the output if you can */
-    void evaluate();
+    void evaluate1();
+    void evaluate2();
+    void evaluate3();
+    void evaluate4();
+    void evaluate5();
+    void evaluate6();
+    void evaluate7();
+    void evaluate8();
+    void evaluate9();
+    void evaluate10();
+    void evaluate11();
+    void evaluate12();
+    void evaluate13();
+    void evaluate14();
+    void evaluate15();
+    void evaluate16();
 
     void minorTrace() const;
 
