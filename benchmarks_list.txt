@@ -1,0 +1,13 @@
+gcc
+mcf
+omnetpp
+tonto
+h264ref
+sjeng
+lbm
+bzip2
+milc
+leslie3d
+namd
+povray
+astar
