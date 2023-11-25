@@ -1,6 +1,6 @@
 source_dir=$HOME/"ECE565_final_project/Purdue-ECE-56500-project/m5out/"
 source_file="stats.txt"
-destination_dir="/home/min/a/caninoj/ECE565_final_project/Purdue-ECE-56500-project/benchmarks_results/baseline_minor"
+destination_dir=$HOME/"ECE565_final_project/Purdue-ECE-56500-project/benchmarks_results/baseline_minor"
 
 while IFS= read -r variable; do
     echo "benchmark running: $variable" #| cut -d'.' -f2
