@@ -376,7 +376,7 @@ def get_process(options, target_isa="arm"):
     perlbench = Process()
     perlbench_dir = '400.perlbench/'
     perlbench.executable =  exe_dir_06+perlbench_dir+\
-    'exe/perlbench' + exe_suffix
+    'exe/perlbench' + '_base.amd64-m64-gcc43-nn'
     perlbench.cmd = [perlbench.executable] +\
         ['-I./lib', 'checkspam.pl', '2500', '5', '25',\
         '11', '150', '1', '1', '1', '1' ]
@@ -387,7 +387,7 @@ def get_process(options, target_isa="arm"):
     bzip2 = Process()
     bzip2_dir = '401.bzip2/'
     bzip2.executable =  exe_dir_06+bzip2_dir+\
-        'exe/bzip2' 
+        'exe/bzip2' + exe_suffix
     data= bench_dir_06+bzip2_dir+'data/ref/input/input.source'
     bzip2.cmd = [bzip2.executable] + [data, '1']
     bzip2.output = 'input.source.out'
@@ -396,7 +396,7 @@ def get_process(options, target_isa="arm"):
     gcc = Process()
     gcc_dir = '403.gcc/'
     gcc.executable =  exe_dir_06+gcc_dir+\
-        'exe/gcc' 
+        'exe/gcc' + exe_suffix
     data= bench_dir_06+gcc_dir+'/data/ref/input/166.i'
     output=output_dir+'166.s'
     gcc.cmd = [gcc.executable] + [data]+['-o',output] + ['-quiet'] \
@@ -408,7 +408,7 @@ def get_process(options, target_isa="arm"):
     #410.bwaves
     bwaves = Process()
     bwaves_dir= bench_dir_06+'410.bwaves'
-    bwaves.executable =  exe_dir_06+'410.bwaves/'+'exe/bwaves' 
+    bwaves.executable =  exe_dir_06+'410.bwaves/'+'exe/bwaves' + exe_suffix
     bwaves.cwd = bwaves_dir+'run/'
     bwaves.cmd = [bwaves.executable]
 
@@ -497,6 +497,15 @@ def get_process(options, target_isa="arm"):
     sjeng.cmd = [sjeng.executable]+[data]
     sjeng.output = 'ref.out'
 
+    #464.h264
+    h264ref=Process()
+    h264ref_dir = '464.h264ref/'
+    h264ref.executable =  exe_dir_06+h264ref_dir+\
+        'exe/h264ref' + exe_suffix
+    data= bench_dir_06+h264ref_dir+\
+         '/data/ref/input/foreman_ref_encoder_baseline.cfg'
+    h264ref.cmd = [h264ref.executable]+[data]
+    h264ref.output = 'h264ref.log'
 
     #465.tonto
     tonto=Process()
@@ -516,7 +525,6 @@ def get_process(options, target_isa="arm"):
     data= bench_dir_06+lbm_dir+'/data/ref/input/100_100_130_ldc.of'
     lbm.cmd = [lbm.executable]+['20', 'reference.dat', '0', '1' ,data]
     lbm.output = 'lbm.out'
-
 
     #471.omnetpp
     omnetpp=Process()
