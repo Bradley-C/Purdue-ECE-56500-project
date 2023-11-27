@@ -37,7 +37,7 @@
 namespace gem5
 {
 
-namespace constant_value_unit
+namespace load_value_prediction
 {
 
 class ConstantVerificationUnit
@@ -130,7 +130,7 @@ class ConstantVerificationUnit
     unsigned log2NumThreads;
 };
 
-} // namespace constant_value_unit
+} // namespace load_value_prediction
 } // namespace gem5
 
 #endif // __CPU_LVPU_LVPT_HH__

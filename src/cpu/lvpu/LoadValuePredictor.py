@@ -38,11 +38,12 @@ from m5.proxy import *
 #     lctCtrlBits = Param.Unsigned(2, "Bits per counter")
 
 
-# class ConstantVerificationUnit(SimObject):
-#     type = 'ConstantVerificationUnit'
-#     cxx_class = 'gem5::load_value_prediction::ConstantVerificationUnit'
-#     cxx_header = "cpu/lvpu/cvu.hh"
-
+class ConstantVerificationUnit(SimObject):
+    type = 'ConstantVerificationUnit'
+    cxx_class = 'gem5::load_value_prediction::ConstantVerificationUnit'
+    cxx_header = "cpu/lvpu/cvu.hh"
+    CVUEntries = Param.Unsigned(1024, "Number of LVPT entries")
+    CVUTagSize = Param.Unsigned(32, "Size of the CVU tags, in bits")
 
 class LoadValuePredictionTable(SimObject):
     type = 'LoadValuePredictionTable'
@@ -61,7 +62,7 @@ class LoadValuePredictor(SimObject):
     instShiftAmt = Param.Unsigned(2, "Number of bits to shift instructions by")
     # lct = Param.LoadClassficationTable(LoadClassificationTable(),
     #                                    "Load Classification Table")
-    # cvu = Param.ConstantVerificationUnit(ConstantVerificationUnit(),
-    #                                      "Constant Verification Unit")
+    cvu = Param.ConstantVerificationUnit(ConstantVerificationUnit(),
+                                          "Constant Verification Unit")
     lvpt = Param.LoadValuePredictionTable(LoadValuePredictionTable(),
                                           "Load Value Prediction Table")
