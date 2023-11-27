@@ -45,11 +45,8 @@ class LoadValuePredictionTable
   private:
     struct LVPTEntry
     {
-        /** The entry's tag. */
-        Addr tag = 0;
-
         /** The entry's value. */
-        uint64_t value;
+        uint8_t value;
 
         /** The entry's thread id. */
         ThreadID tid;
@@ -59,13 +56,12 @@ class LoadValuePredictionTable
     };
 
   public:
-    /** Creates an LVPT with the given number of entries, number of bits per
-     *  tag, and instruction offset amount.
+    /** Creates an LVPT with the given number of entries and instruction offset
+     *  amount.
      *  @param numEntries Number of entries for the LVPT.
-     *  @param tagBits Number of bits for each tag in the LVPT.
      *  @param instShiftAmt Offset amount for instructions to ignore alignment.
      */
-    LoadValuePredictionTable(unsigned numEntries, unsigned tagBits,
+    LoadValuePredictionTable(unsigned numEntries,
                 unsigned instShiftAmt, unsigned numThreads);
 
     void reset();
@@ -92,12 +88,6 @@ class LoadValuePredictionTable
      */
     inline unsigned getIndex(Addr instPC, ThreadID tid);
 
-    /** Returns the tag bits of a given address.
-     *  @param inst_PC The branch's address.
-     *  @return Returns the tag bits.
-     */
-    inline Addr getTag(Addr instPC);
-
     /** The actual LVPT. */
     std::vector<LVPTEntry> lvpt;
 
@@ -107,17 +97,8 @@ class LoadValuePredictionTable
     /** The index mask. */
     unsigned idxMask;
 
-    /** The number of tag bits per entry. */
-    unsigned tagBits;
-
-    /** The tag mask. */
-    unsigned tagMask;
-
     /** Number of bits to shift PC when calculating index. */
     unsigned instShiftAmt;
-
-    /** Number of bits to shift PC when calculating tag. */
-    unsigned tagShiftAmt;
 
     /** Log2 NumThreads used for hashing threadid */
     unsigned log2NumThreads;

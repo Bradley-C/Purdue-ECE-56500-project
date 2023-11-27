@@ -39,18 +39,16 @@
 // {
 
 // LoadValuePredictionTable::LoadValuePredictionTable(unsigned _numEntries,
-//                        unsigned _tagBits,
 //                        unsigned _instShiftAmt,
 //                        unsigned _num_threads)
 //     : numEntries(_numEntries),
-//       tagBits(_tagBits),
 //       instShiftAmt(_instShiftAmt),
 //       log2NumThreads(floorLog2(_num_threads))
 // {
-//     DPRINTF(Fetch, "BTB: Creating BTB object.\n");
+//     DPRINTF(Fetch, "LVPT: Creating LVPT object.\n");
 
 //     if (!isPowerOf2(numEntries)) {
-//         fatal("BTB entries is not a power of 2!");
+//         fatal("LVPT entries is not a power of 2!");
 //     }
 
 //     lvpt.resize(numEntries);
@@ -60,10 +58,6 @@
 //     }
 
 //     idxMask = numEntries - 1;
-
-//     tagMask = (1 << tagBits) - 1;
-
-//     tagShiftAmt = instShiftAmt + floorLog2(numEntries);
 // }
 
 // void
@@ -80,15 +74,8 @@
 // {
 //     // Need to shift PC over by the word offset.
 //     return ((instPC >> instShiftAmt)
-//             ^ (tid << (tagShiftAmt - instShiftAmt - log2NumThreads)))
+//             ^ (tid << (instShiftAmt - log2NumThreads)))
 //             & idxMask;
-// }
-
-// inline
-// Addr
-// LoadValuePredictionTable::getTag(Addr instPC)
-// {
-//     return (instPC >> tagShiftAmt) & tagMask;
 // }
 
 // bool
@@ -96,12 +83,9 @@
 // {
 //     unsigned lvpt_idx = getIndex(instPC, tid);
 
-//     Addr inst_tag = getTag(instPC);
-
 //     assert(lvpt_idx < numEntries);
 
 //     if (lvpt[lvpt_idx].valid
-//         && inst_tag == lvpt[lvpt_idx].tag
 //         && lvpt[lvpt_idx].tid == tid) {
 //         return true;
 //     } else {
@@ -111,39 +95,34 @@
 
 // // @todo Create some sort of return struct that has both whether or not the
 // // address is valid, and also the address.  For now will just use
-// // addr = 0 to
-// // represent invalid entry.
-// const PCStateBase *
+// // addr = 0 to represent invalid entry.
+// const uint8_t* *
 // LoadValuePredictionTable::lookup(Addr inst_pc, ThreadID tid)
 // {
 //     unsigned lvpt_idx = getIndex(inst_pc, tid);
 
-//     Addr inst_tag = getTag(inst_pc);
-
 //     assert(lvpt_idx < numEntries);
 
 //     if (lvpt[lvpt_idx].valid
-//         && inst_tag == btb[lvpt_idx].tag
-//         && btb[btb_idx].tid == tid) {
-//         return btb[btb_idx].target.get();
+//         && lvpt[lvpt_idx].tid == tid) {
+//         return &lvpt[lvpt_idx].value.get();
 //     } else {
 //         return nullptr;
 //     }
 // }
 
 // void
-// LoadValuePredictionTable::update(Addr inst_pc, const PCStateBase &target,
+// LoadValuePredictionTable::update(Addr inst_pc, const uint8_t *value,
 //                                  ThreadID tid)
 // {
-//     unsigned btb_idx = getIndex(inst_pc, tid);
+//     unsigned lvpt_idx = getIndex(inst_pc, tid);
 
-//     assert(btb_idx < numEntries);
+//     assert(lvpt_idx < numEntries);
 
-//     btb[btb_idx].tid = tid;
-//     btb[btb_idx].valid = true;
-//     set(btb[btb_idx].target, target);
-//     btb[btb_idx].tag = getTag(inst_pc);
+//     lvpt[lvpt_idx].tid = tid;
+//     lvpt[lvpt_idx].valid = true;
+//     set(lvpt[lvpt_idx].value, *value);
 // }
 
-} // namespace branch_prediction
-} // namespace gem5
+// } // namespace branch_prediction
+// } // namespace gem5
