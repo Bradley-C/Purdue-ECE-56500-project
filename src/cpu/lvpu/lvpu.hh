@@ -48,16 +48,15 @@
 #include "base/statistics.hh"
 #include "base/types.hh"
 #include "cpu/inst_seq.hh"
+#include "cpu/lvpu/cvu.hh"
 #include "cpu/lvpu/lvpt.hh"
 #include "cpu/static_inst.hh"
-
-// #include "params/LoadValuePredictor.hh"
 #include "sim/probe/pmu.hh"
 #include "sim/sim_object.hh"
 
+// #include "params/LoadValuePredictor.hh"
 namespace gem5
 {
-
 namespace load_value_prediction
 {
 
@@ -142,12 +141,31 @@ class LVPredUnit : public SimObject
      */
     virtual void lvptUpdate(ThreadID tid, Addr instPC, void * &lct) = 0;
 
+     /**
+     * If a load cannot be predicted, because the CVU value is invalid,
+     * this function sets the appropriate counter in the load classification
+     * table to not predictable.
+     * @param inst_PC The PC to look up the load in the LCT.
+     * @param lct Pointer that will be set to an object that
+     * has the load predictor state associated with the lookup.
+     */
+    virtual void cvuUpdate(ThreadID tid, Addr instPC, void * &lct) = 0;
+
     /**
      * Looks up a given PC in the LVPT to see if a valid entry exists.
      * @param inst_PC The PC to look up.
      * @return Whether the LVPT contains the given PC.
      */
-    bool LVPTValid(Addr instPC) { return BTB.valid(instPC, 0); }
+    bool LVPTValid(Addr instPC) { return LVPT.valid(instPC, 0); }
+
+    /**
+     * Looks up a given PC & data addr in the CVU to see if a valid entry
+     * exists.
+     * @param inst_PC The PC to look up.
+     * @return Whether the LVPT contains the given PC.
+     */
+    bool CVUValid(Addr instPC,  uint64_t &data_addr) { return CVU.valid(instPC
+                                                    ,data_addr, 0); }
 
     /**
      * Looks up a given PC in the LVPT to get the predicted value. The PC may
@@ -188,8 +206,17 @@ class LVPredUnit : public SimObject
     {
         LVPT.update(instPC, value, 0);
     }
-
-
+   /**
+     * Updates the CVU with the value of a load address when the LCT goes to
+     *  constant.
+     * @param inst_PC The load's PC that will be updated.
+     * @param value The load's value that will be added to the CVU.
+     */
+    void
+    CVUUpdate(Addr instPC, const uint8_t *value)
+    {
+        CVU.update(instPC, value, 0);
+    }
     void dump();
 
   private:
@@ -257,6 +284,8 @@ class LVPredUnit : public SimObject
     /** The BTB. */
     LoadValuePredictionTable LVPT;
 
+    /** The 2nd extended BTB. */
+    ConstantVerificationUnit CVU;
     struct LVPredUnitStats : public statistics::Group
     {
         LVPredUnitStats(statistics::Group *parent);
