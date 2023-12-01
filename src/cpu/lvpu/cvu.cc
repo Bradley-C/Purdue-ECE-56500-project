@@ -32,118 +32,122 @@
 #include "base/trace.hh"
 #include "debug/Execute.hh"
 
-// namespace gem5
-// {
+namespace gem5
+{
 
-// namespace constant_value_unit
-// {
+namespace load_value_prediction
+{
 
-// ConstantVerificationUnit::ConstantVerificationUnit(unsigned _numEntries,
-//                        unsigned _tagBits,
-//                        unsigned _instShiftAmt,
-//                        unsigned _num_threads)
-//     : numEntries(_numEntries),
-//       tagBits(_tagBits),
-//       instShiftAmt(_instShiftAmt),
-//       log2NumThreads(floorLog2(_num_threads))
-// {
-//     DPRINTF(Fetch, "BTB: Creating BTB object.\n");
+ConstantVerificationUnit::ConstantVerificationUnit(unsigned _numEntries,
+                       unsigned _tagBits,
+                       unsigned _instShiftAmt,
+                       unsigned _num_threads)
+    : numEntries(_numEntries),
+      tagBits(_tagBits),
+      instShiftAmt(_instShiftAmt),
+      log2NumThreads(floorLog2(_num_threads))
+{
 
-//     if (!isPowerOf2(numEntries)) {
-//         fatal("BTB entries is not a power of 2!");
-//     }
+    if (!isPowerOf2(numEntries)) {
+        fatal("CVU entries is not a power of 2!");
+    }
 
-//     lvpt.resize(numEntries);
+    cvu.resize(numEntries);
 
-//     for (unsigned i = 0; i < numEntries; ++i) {
-//         lvpt[i].valid = false;
-//     }
+    for (unsigned i = 0; i < numEntries; ++i) {
+        cvu[i].valid = false;
+    }
 
-//     idxMask = numEntries - 1;
+    idxMask = numEntries - 1;
 
-//     tagMask = (1 << tagBits) - 1;
+    tagMask = (1 << tagBits) - 1;
 
-//     tagShiftAmt = instShiftAmt + floorLog2(numEntries);
-// }
+    tagShiftAmt = instShiftAmt + floorLog2(numEntries);
+}
 
-// void
-// ConstantVerificationUnit::reset()
-// {
-//     for (unsigned i = 0; i < numEntries; ++i) {
-//         lvpt[i].valid = false;
-//     }
-// }
+void
+ConstantVerificationUnit::reset()
+{
+    for (unsigned i = 0; i < numEntries; ++i) {
+        cvu[i].valid = false;
+    }
+}
 
-// inline
-// unsigned
-// ConstantVerificationUnit::getIndex(Addr instPC, ThreadID tid)
-// {
-//     // Need to shift PC over by the word offset.
-//     return ((instPC >> instShiftAmt)
-//             ^ (tid << (tagShiftAmt - instShiftAmt - log2NumThreads)))
-//             & idxMask;
-// }
+inline
+unsigned
+ConstantVerificationUnit::getIndex(Addr instPC, ThreadID tid)
+{
+    // Need to shift PC over by the word offset.
+    return ((instPC >> instShiftAmt)
+            ^ (tid << (tagShiftAmt - instShiftAmt - log2NumThreads)))
+            & idxMask;
+}
 
-// inline
-// Addr
-// ConstantVerificationUnit::getTag(Addr instPC)
-// {
-//     return (instPC >> tagShiftAmt) & tagMask;
-// }
+inline
+Addr
+ConstantVerificationUnit::getTag(Addr instPC)
+{
+    return (instPC >> tagShiftAmt) & tagMask;
+}
 
-// bool
-// ConstantVerificationUnit::valid(Addr instPC, ThreadID tid)
-// {
-//     unsigned lvpt_idx = getIndex(instPC, tid);
+bool
+ConstantVerificationUnit::valid(Addr instPC, ThreadID tid)
+{
+    unsigned cvu_idx = getIndex(instPC, tid);
 
-//     Addr inst_tag = getTag(instPC);
+    Addr inst_tag = getTag(instPC);
 
-//     assert(lvpt_idx < numEntries);
+    assert(cvu_idx < numEntries);
 
-//     if (lvpt[lvpt_idx].valid
-//         && inst_tag == lvpt[lvpt_idx].tag
-//         && lvpt[lvpt_idx].tid == tid) {
-//         return true;
-//     } else {
-//         return false;
-//     }
-// }
+    if (cvu[cvu_idx].valid
+        && inst_tag == cvu[cvu_idx].tag
+        && cvu[cvu_idx].tid == tid) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
-// // @todo Create some sort of return struct that has both whether or not the
-// // address is valid, and also the address.  For now will just use
-// // addr = 0 to
-// // represent invalid entry.
-// const PCStateBase *
-// ConstantVerificationUnit::lookup(Addr inst_pc, ThreadID tid)
-// {
-//     unsigned lvpt_idx = getIndex(inst_pc, tid);
 
-//     Addr inst_tag = getTag(inst_pc);
+const PCStateBase *
+ConstantVerificationUnit::lookup(Addr inst_pc, ThreadID tid)
+{
+    unsigned cvu_idx = getIndex(inst_pc, tid);
 
-//     assert(lvpt_idx < numEntries);
+    Addr inst_tag = getTag(inst_pc);
 
-//     if (lvpt[lvpt_idx].valid
-//         && inst_tag == btb[lvpt_idx].tag
-//         && btb[btb_idx].tid == tid) {
-//         return btb[btb_idx].target.get();
-//     } else {
-//         return nullptr;
-//     }
-// }
+    assert(cvu_idx < numEntries);
 
-// void
-// ConstantVerificationUnit::update(Addr inst_pc, const PCStateBase &target,
-//                                  ThreadID tid)
-// {
-//     unsigned btb_idx = getIndex(inst_pc, tid);
+    if (cvu[cvu_idx].valid
+        && inst_tag == cvu[cvu_idx].tag
+        && cvu[cvu_idx].tid == tid) {
+        return cvu[cvu_idx].target.get();
+    } else {
+        return nullptr;
+    }
+}
 
-//     assert(btb_idx < numEntries);
+void
+ConstantVerificationUnit::update(Addr inst_pc, const PCStateBase &target,
+                                 ThreadID tid)
+{
+    unsigned cvu_idx = getIndex(inst_pc, tid);
 
-//     btb[btb_idx].tid = tid;
-//     btb[btb_idx].valid = true;
-//     set(btb[btb_idx].target, target);
-//     btb[btb_idx].tag = getTag(inst_pc);
-// }
+    assert(cvu_idx < numEntries);
 
+    cvu[cvu_idx].tid = tid;
+    cvu[cvu_idx].valid = true;
+    set(cvu[cvu_idx].target, target);
+    cvu[cvu_idx].tag = getTag(inst_pc);
+}
+    void clear(Addr inst_pc, const uint64_t &data_addr, ThreadID tid);
+
+
+//Need to add logic here
+ConstantVerificationUnit::clear(Addr inst_pc, const PCStateBase &target,
+                                 ThreadID tid)
+{
+
+}
 } // namespace constant_value_unit
 } // namespace gem5
