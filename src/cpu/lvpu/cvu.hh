@@ -89,7 +89,7 @@ class ConstantVerificationUnit
 
     /** Updates the LVPT with the mispredicted value of a load.
      *  @param inst_pc The PC address of the load being updated.
-     *  @param new_value The value at the address that was loaded.
+     *  @param new_value The address that was loaded.
      *  @param tid The thread id.
      */
     void update(Addr inst_pc, const uint32_t new_value, ThreadID tid);
@@ -97,12 +97,12 @@ class ConstantVerificationUnit
     /** Clears the CVU of valid entry when data addr matches a given entry.
      *  @param inst_pc The PC address of the store being updated.
      *  @param data_addr The address that is stored to.
-     *  @param new_value The value that was stored.
+     *  @param new_addr The value that was stored.
      *  @param tid The thread id.
      *  @return CVUReturn to be sent back to the LVPT/LCT in the Fetch2 stage
      */
     void store_clear(Addr inst_pc, const uint32_t data_addr,
-                      const uint32_t new_value, ThreadID tid);
+                      const uint32_t new_addr, ThreadID tid);
 
   private:
     /** Returns the index into the CVU, based on the load's PC.
