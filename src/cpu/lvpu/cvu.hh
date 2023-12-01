@@ -26,8 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __CPU_LVPU_LVPT_HH__
-#define __CPU_LVPU_LVPT_HH__
+#ifndef __CPU_LVPU_CVU_HH__
+#define __CPU_LVPU_CVU_HH__
 
 #include "arch/generic/pcstate.hh"
 #include "base/logging.hh"
@@ -45,9 +45,6 @@ class ConstantVerificationUnit
   private:
     struct CVUEntry
     {
-        /** The entry's tag. */
-        Addr tag = 0;
-
         /** The entry's value. */
         uint64_t value;
 
@@ -56,6 +53,18 @@ class ConstantVerificationUnit
 
         /** Whether or not the entry is valid. */
         bool valid = false;
+    };
+
+    struct CVUReturn
+    {
+        /** The entry's index to clear */
+        uint32_t index;
+
+        /** The entry's value to replace old*/
+        uint32_t value;
+
+        /** Whether or not the replacement is valid. */
+        bool clear = false;
     };
 
   public:
@@ -83,42 +92,31 @@ class ConstantVerificationUnit
      *  @param new_value The value at the address that was loaded.
      *  @param tid The thread id.
      */
-    void update(Addr inst_pc, const uint64_t &new_value, ThreadID tid);
+    void update(Addr inst_pc, const uint32_t new_value, ThreadID tid);
 
     /** Clears the CVU of valid entry when data addr matches a given entry.
      *  @param inst_pc The address of the load being updated.
      *  @param data_addr The value at the address that was loaded.
      *  @param tid The thread id.
      */
-    void clear(Addr inst_pc, const uint64_t &data_addr, ThreadID tid);
+    void store_clear(Addr inst_pc, const uint32_t data_addr, ThreadID tid);
 
   private:
-    /** Returns the index into the LVPT, based on the load's PC.
+    /** Returns the index into the CVU, based on the load's PC.
      *  @param inst_PC The load to look up.
      *  @return Returns the index into the LVPT.
      */
     inline unsigned getIndex(Addr instPC, ThreadID tid);
 
-    /** Returns the tag bits of a given address.
-     *  @param inst_PC The branch's address.
-     *  @return Returns the tag bits.
-     */
-    inline Addr getTag(Addr instPC);
 
-    /** The actual LVPT. */
-    std::vector<LVPTEntry> lvpt;
+    /** The actual CVU. */
+    std::vector<CVUEntry> cvu;
 
     /** The number of entries in the CVU. */
     unsigned numEntries;
 
     /** The index mask. */
     unsigned idxMask;
-
-    /** The number of tag bits per entry. */
-    unsigned tagBits;
-
-    /** The tag mask. */
-    unsigned tagMask;
 
     /** Number of bits to shift PC when calculating index. */
     unsigned instShiftAmt;
@@ -133,4 +131,4 @@ class ConstantVerificationUnit
 } // namespace load_value_prediction
 } // namespace gem5
 
-#endif // __CPU_LVPU_LVPT_HH__
+#endif // __CPU_LVPU_CVU_HH__

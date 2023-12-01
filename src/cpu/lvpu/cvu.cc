@@ -99,7 +99,6 @@ ConstantVerificationUnit::valid(Addr instPC, ThreadID tid)
     }
 }
 
-
 uint32_t
 ConstantVerificationUnit::lookup(Addr inst_pc, ThreadID tid)
 {
@@ -129,7 +128,7 @@ ConstantVerificationUnit::update(Addr inst_pc, const uint32_t new_value,
 }
 
 CVUReturn
-ConstantVerificationUnit::clear(Addr inst_pc, const uint32_t data_addr,
+ConstantVerificationUnit::store_clear(Addr inst_pc, const uint32_t data_addr,
                                  ThreadID tid){
     CVUReturn return_data;
 
