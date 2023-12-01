@@ -129,14 +129,14 @@ ConstantVerificationUnit::update(Addr inst_pc, const uint32_t new_value,
 
 CVUReturn
 ConstantVerificationUnit::store_clear(Addr inst_pc, const uint32_t data_addr,
-                                 const uint32_t new_value, ThreadID tid){
+                                 const uint32_t new_addr, ThreadID tid){
     CVUReturn return_data;
 
     for (unsigned i = 0; i < numEntries; i++) {
-        if (cvu[i] == data_addr){
+        if (cvu[i].value == data_addr){
             // Figure out how to pass value being stored to here as well
             return_data =
-                (CVUReturn){.index=i, .value=new_value, .clear=true};
+                (CVUReturn){.index=i, .value=new_addr, .clear=true};
         }
 
     }
