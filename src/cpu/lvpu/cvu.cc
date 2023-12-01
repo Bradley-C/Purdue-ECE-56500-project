@@ -65,6 +65,17 @@ ConstantVerificationUnit::ConstantVerificationUnit(unsigned _numEntries,
     tagShiftAmt = instShiftAmt + floorLog2(numEntries);
 }
 
+
+inline
+unsigned
+DefaultBTB::getIndex(Addr instPC, ThreadID tid)
+{
+    // Need to shift PC over by the word offset.
+    return ((instPC >> instShiftAmt)
+            ^ (tid << (tagShiftAmt - instShiftAmt - log2NumThreads)))
+            & idxMask;
+}
+
 void
 ConstantVerificationUnit::reset()
 {
@@ -73,34 +84,14 @@ ConstantVerificationUnit::reset()
     }
 }
 
-inline
-unsigned
-ConstantVerificationUnit::getIndex(Addr instPC, ThreadID tid)
-{
-    // Need to shift PC over by the word offset.
-    return ((instPC >> instShiftAmt)
-            ^ (tid << (tagShiftAmt - instShiftAmt - log2NumThreads)))
-            & idxMask;
-}
-
-inline
-Addr
-ConstantVerificationUnit::getTag(Addr instPC)
-{
-    return (instPC >> tagShiftAmt) & tagMask;
-}
-
 bool
 ConstantVerificationUnit::valid(Addr instPC, ThreadID tid)
 {
     unsigned cvu_idx = getIndex(instPC, tid);
 
-    Addr inst_tag = getTag(instPC);
-
     assert(cvu_idx < numEntries);
 
     if (cvu[cvu_idx].valid
-        && inst_tag == cvu[cvu_idx].tag
         && cvu[cvu_idx].tid == tid) {
         return true;
     } else {
@@ -109,26 +100,23 @@ ConstantVerificationUnit::valid(Addr instPC, ThreadID tid)
 }
 
 
-const PCStateBase *
+uint32_t
 ConstantVerificationUnit::lookup(Addr inst_pc, ThreadID tid)
 {
     unsigned cvu_idx = getIndex(inst_pc, tid);
 
-    Addr inst_tag = getTag(inst_pc);
-
     assert(cvu_idx < numEntries);
 
     if (cvu[cvu_idx].valid
-        && inst_tag == cvu[cvu_idx].tag
         && cvu[cvu_idx].tid == tid) {
-        return cvu[cvu_idx].target.get();
+        return cvu[cvu_idx].value;
     } else {
         return nullptr;
     }
 }
 
 void
-ConstantVerificationUnit::update(Addr inst_pc, const PCStateBase &target,
+ConstantVerificationUnit::update(Addr inst_pc, const uint32_t new_value,
                                  ThreadID tid)
 {
     unsigned cvu_idx = getIndex(inst_pc, tid);
@@ -137,17 +125,25 @@ ConstantVerificationUnit::update(Addr inst_pc, const PCStateBase &target,
 
     cvu[cvu_idx].tid = tid;
     cvu[cvu_idx].valid = true;
-    set(cvu[cvu_idx].target, target);
-    cvu[cvu_idx].tag = getTag(inst_pc);
+    cvu[cvu_idx].value = new_value;
 }
-    void clear(Addr inst_pc, const uint64_t &data_addr, ThreadID tid);
 
+CVUReturn
+ConstantVerificationUnit::clear(Addr inst_pc, const uint32_t data_addr,
+                                 ThreadID tid){
+    CVUReturn return_data;
 
-//Need to add logic here
-ConstantVerificationUnit::clear(Addr inst_pc, const PCStateBase &target,
-                                 ThreadID tid)
-{
+    for (unsigned i = 0; i < numEntries; i++) {
+        if (cvu[i] == target){
+            // Figure out how to pass value being stored to here as well
+            return_data =
+                (CVUReturn){.index=i, .value=data_addr, .clear=true};
+        }
+
+    }
+    return return_data
 
 }
+
 } // namespace constant_value_unit
 } // namespace gem5
