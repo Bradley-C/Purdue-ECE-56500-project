@@ -80,31 +80,34 @@ class ConstantVerificationUnit
     void reset();
 
     /** Checks if a value is in the CVU.
-     *  @param inst_PC The address of the load to look up.
+     *  @param inst_PC The PC address of the load to look up.
      *  @param tid The thread id.
-     *  @return Whether or not the value exists in the LVPT (i.e. the entry is
-     *  not still initialized to zero).
+     *  @return Whether or not the value exists in the CVU (i.e. the entry is
+     *  not still initialized to zero).W
      */
     bool valid(Addr instPC, ThreadID tid);
 
     /** Updates the LVPT with the mispredicted value of a load.
-     *  @param inst_pc The address of the load being updated.
+     *  @param inst_pc The PC address of the load being updated.
      *  @param new_value The value at the address that was loaded.
      *  @param tid The thread id.
      */
     void update(Addr inst_pc, const uint32_t new_value, ThreadID tid);
 
     /** Clears the CVU of valid entry when data addr matches a given entry.
-     *  @param inst_pc The address of the load being updated.
-     *  @param data_addr The value at the address that was loaded.
+     *  @param inst_pc The PC address of the store being updated.
+     *  @param data_addr The address that is stored to.
+     *  @param new_value The value that was stored.
      *  @param tid The thread id.
+     *  @return CVUReturn to be sent back to the LVPT/LCT in the Fetch2 stage
      */
-    void store_clear(Addr inst_pc, const uint32_t data_addr, ThreadID tid);
+    void store_clear(Addr inst_pc, const uint32_t data_addr,
+                      const uint32_t new_value, ThreadID tid);
 
   private:
     /** Returns the index into the CVU, based on the load's PC.
      *  @param inst_PC The load to look up.
-     *  @return Returns the index into the LVPT.
+     *  @return Returns the index into the CVU.
      */
     inline unsigned getIndex(Addr instPC, ThreadID tid);
 
