@@ -247,13 +247,13 @@ LVPredUnit::getLoadClass(uint8_t &count)
 {
     switch(count) {
       case 0:
-        return LoadClass::UNPREDICTABLE;
+        return LoadClass::UnpredictableStrong;
       case 1:
-        return LoadClass::UNPREDICTABLE;
+        return LoadClass::UnpredictableWeak;
       case 2:
-        return LoadClass::PREDICTABLE;
+        return LoadClass::Predictable;
       default:
-        return LoadClass::CONSTANT;
+        return LoadClass::Constant;
     }
 }
 
