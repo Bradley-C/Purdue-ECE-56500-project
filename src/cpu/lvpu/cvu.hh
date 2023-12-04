@@ -26,8 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __CPU_LVPU_LVPT_HH__
-#define __CPU_LVPU_LVPT_HH__
+#ifndef __CPU_LVPU_CVU_HH__
+#define __CPU_LVPU_CVU_HH__
 
 #include "arch/generic/pcstate.hh"
 #include "base/logging.hh"
@@ -37,7 +37,7 @@
 namespace gem5
 {
 
-namespace constant_value_unit
+namespace load_value_prediction
 {
 
 class ConstantVerificationUnit

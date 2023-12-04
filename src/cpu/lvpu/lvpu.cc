@@ -48,470 +48,245 @@
 #include "base/compiler.hh"
 #include "base/trace.hh"
 #include "config/the_isa.hh"
-#include "debug/Branch.hh"
-
-// namespace gem5
-// {
-
-// namespace load_value_prediction
-// {
-
-// LVPredUnit::LVPredUnit(const Params &params)
-//     : SimObject(params),
-//       numThreads(params.numThreads),
-//       predHist(numThreads),
-//       LVPT(params.LVPTEntries,
-//           params.LVPTTagSize,
-//           params.instShiftAmt,
-//           params.numThreads),
-//       RAS(numThreads),
-//       iPred(params.indirectBranchPred),
-//       stats(this),
-//       instShiftAmt(params.instShiftAmt)
-// {}
-
-// LVPredUnit::LVPredUnitStats::LVPredUnitStats(statistics::Group *parent)
-//     : statistics::Group(parent),
-//       ADD_STAT(LVPTLookups, statistics::units::Count::get(),
-//                "Number of LVPT lookups"),
-//       ADD_STAT(predictedIncorrect, statistics::units::Count::get(),
-//                "Number of incorrect predictions"),
-
-// {}
-
-// probing::PMUUPtr
-// LVPredUnit::pmuProbePoint(const char *name)
-// {
-//     probing::PMUUPtr ptr;
-//     ptr.reset(new probing::PMU(getProbeManager(), name));
-
-//     return ptr;
-// }
-
-// void
-// LVPredUnit::regProbePoints()
-// {
-//     ppLoads = pmuProbePoint("Loads");
-//     ppMisses = pmuProbePoint("Misses");
-// }
-
-// void
-// LVPredUnit::drainSanityCheck() const
-// {
-//     // We shouldn't have any outstanding requests when we resume from
-//     // a drained system.
-//     for ([[maybe_unused]] const auto& ph : predHist)
-//         assert(ph.empty());
-// }
-
-// bool
-// LVPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
-//                    uint8_t *value, ThreadID tid)
-// {
-//     // See if load value predictor provides a value.
-//     // If so, get its value from the LVPT.
-
-//     bool pred_taken = false;
-//     std::unique_ptr<PCStateBase> target(value.clone());
-
-//     ++stats.lookups;
-//     ppLoads->notify(1);
-
-//     void *bp_history = NULL;
-
-//     if (inst->isLoad()) {
-//         DPRINTF(Load, "[tid:%i] [sn:%llu] Load\n",
-//             tid,seqNum);
-//         // pred_taken = true;
-//         // Tell the LVPU there was a load.
-//         uncondBranch(tid, pc.instAddr(), bp_history);
-//     } else {
-//         ++stats.condPredicted;
-//         pred_taken = lookup(tid, pc.instAddr(), bp_history);
-
-//         DPRINTF(Branch, "[tid:%i] [sn:%llu] "
-//                 "Branch predictor predicted %i for PC %s\n",
-//                 tid, seqNum,  pred_taken, pc);
-//     }
-
-//     const bool orig_pred_taken = pred_taken;
-//     if (iPred) {
-//         iPred->genIndirectInfo(tid, indirect_history);
-//     }
-
-//     DPRINTF(Branch,
-//             "[tid:%i] [sn:%llu] Creating prediction history for PC %s\n",
-//             tid, seqNum, pc);
-
-//     PredictorHistory predict_record(seqNum, pc.instAddr(),
-//                                      pred_taken, bp_history,
-//                                      indirect_history, tid, inst);
-
-//     // Now lookup in the LVPT or RAS.
-//     if (pred_taken) {
-//         if (inst->isReturn()) {
-//             ++stats.RASUsed;
-//             predict_record.wasReturn = true;
-//             // If it's a function return call, then look up the address
-//             // in the RAS.
-//             const PCStateBase *ras_top = RAS[tid].top();
-//             if (ras_top)
-//                 set(target, inst->buildRetPC(pc, *ras_top));
-
-//             // Record the top entry of the RAS, and its index.
-//             predict_record.usedRAS = true;
-//             predict_record.RASIndex = RAS[tid].topIdx();
-//             set(predict_record.RASTarget, ras_top);
-
-//             RAS[tid].pop();
-
-//             DPRINTF(Branch, "[tid:%i] [sn:%llu] Instruction %s is
-//                      a return, RAS predicted target: %s, RAS index: %i\n",
-//                     tid, seqNum, pc, *target, predict_record.RASIndex);
-//         } else {
-
-//             if (inst->isCall()) {
-//                 RAS[tid].push(pc);
-//                 predict_record.pushedRAS = true;
-
-//                 // Record that it was a call so that the top RAS entry can
-//                 // be popped off if the speculation is incorrect.
-//                 predict_record.wasCall = true;
-
-//                 DPRINTF(Branch,
-//                         "[tid:%i] [sn:%llu] Instruction %s was a call, "
-//                         "adding %s to the RAS index: %i\n",
-//                         tid, seqNum, pc, pc, RAS[tid].topIdx());
-//             }
-
-//             if (inst->isDirectCtrl() || !iPred) {
-//                 ++stats.LVPTLookups;
-//                 // Check LVPT on direct branches
-//                 if (LVPT.valid(pc.instAddr(), tid)) {
-//                     ++stats.LVPTHits;
-//                     // If it's not a return, use the LVPT to get target
-                       // addr.
-//                     set(target, LVPT.lookup(pc.instAddr(), tid));
-//                     DPRINTF(Branch,
-//                             "[tid:%i] [sn:%llu] Instruction %s predicted "
-//                             "target is %s\n",
-//                             tid, seqNum, pc, *target);
-//                 } else {
-//                     DPRINTF(Branch, "[tid:%i] [sn:%llu] LVPT doesn't have "
-//                             "a valid entry\n", tid, seqNum);
-//                     pred_taken = false;
-//                     predict_record.predTaken = pred_taken;
-//                     // The Direction of the branch predictor is altered
-//                     // because the LVPT did not have an entry
-//                     // The predictor needs to be updated accordingly
-//                     if (!inst->isCall() && !inst->isReturn()) {
-//                         btbUpdate(tid, pc.instAddr(), bp_history);
-//                         DPRINTF(Branch,
-//                                 "[tid:%i] [sn:%llu] btbUpdate "
-//                                 "called for %s\n",
-//                                 tid, seqNum, pc);
-//                     } else if (inst->isCall() && !inst->isUncondCtrl()) {
-//                         RAS[tid].pop();
-//                         predict_record.pushedRAS = false;
-//                     }
-//                     inst->advancePC(*target);
-//                 }
-//             } else {
-//                 predict_record.wasIndirect = true;
-//                 ++stats.indirectLookups;
-//                 //Consult indirect predictor on indirect control
-//                 if (iPred->lookup(pc.instAddr(), *target, tid)) {
-//                     // Indirect predictor hit
-//                     ++stats.indirectHits;
-//                     DPRINTF(Branch,
-//                             "[tid:%i] [sn:%llu] Instruction %s predicted "
-//                             "indirect target is %s\n",
-//                             tid, seqNum, pc, *target);
-//                 } else {
-//                     ++stats.indirectMisses;
-//                     pred_taken = false;
-//                     predict_record.predTaken = pred_taken;
-//                     DPRINTF(Branch,
-//                             "[tid:%i] [sn:%llu] Instruction %s no indirect "
-//                             "target\n",
-//                             tid, seqNum, pc);
-//                     if (!inst->isCall() && !inst->isReturn()) {
-
-//                     } else if (inst->isCall() && !inst->isUncondCtrl()) {
-//                         RAS[tid].pop();
-//                         predict_record.pushedRAS = false;
-//                     }
-//                     inst->advancePC(*target);
-//                 }
-//                 iPred->recordIndirect(pc.instAddr(), target->instAddr(),
-//                         seqNum, tid);
-//             }
-//         }
-//     } else {
-//         if (inst->isReturn()) {
-//            predict_record.wasReturn = true;
-//         }
-//         inst->advancePC(*target);
-//     }
-//     predict_record.target = target->instAddr();
-
-//     set(pc, *target);
-
-//     if (iPred) {
-//         // Update the indirect predictor with the direction prediction
-//         // Note that this happens after indirect lookup, so it does not use
-//         // the new information
-//         // Note also that we use orig_pred_taken instead of pred_taken in
-//         // as this is the actual outcome of the direction prediction
-//         iPred->updateDirectionInfo(tid, orig_pred_taken);
-//     }
-
-//     predHist[tid].push_front(predict_record);
-
-//     DPRINTF(Branch,
-//             "[tid:%i] [sn:%llu] History entry added. "
-//             "predHist.size(): %i\n",
-//             tid, seqNum, predHist[tid].size());
-
-//     return pred_taken;
-// }
-
-// void
-// LVPredUnit::update(const InstSeqNum &done_sn, ThreadID tid)
-// {
-//     DPRINTF(Branch, "[tid:%i] Committing branches until "
-//             "sn:%llu]\n", tid, done_sn);
-
-//     while (!predHist[tid].empty() &&
-//            predHist[tid].back().seqNum <= done_sn) {
-//         // Update the branch predictor with the correct results.
-//         update(tid, predHist[tid].back().pc,
-//                     predHist[tid].back().predTaken,
-//                     predHist[tid].back().bpHistory, false,
-//                     predHist[tid].back().inst,
-//                     predHist[tid].back().target);
-
-//         if (iPred) {
-//             iPred->commit(done_sn, tid,
-//                           predHist[tid].back().indirectHistory);
-//         }
-
-//         predHist[tid].pop_back();
-//     }
-// }
-
-// void
-// LVPredUnit::squash(const InstSeqNum &squashed_sn, ThreadID tid)
-// {
-//     History &pred_hist = predHist[tid];
-
-//     if (iPred) {
-//         iPred->squash(squashed_sn, tid);
-//     }
-
-//     while (!pred_hist.empty() &&
-//            pred_hist.front().seqNum > squashed_sn) {
-//         if (pred_hist.front().usedRAS) {
-//             if (pred_hist.front().RASTarget != nullptr) {
-//                 DPRINTF(Branch, "[tid:%i] [squash sn:%llu]"
-//                         " Restoring top of RAS to: %i,"
-//                         " target: %s\n", tid, squashed_sn,
-//                         pred_hist.front().RASIndex,
-//                         *pred_hist.front().RASTarget);
-//             }
-//             else {
-//                 DPRINTF(Branch, "[tid:%i] [squash sn:%llu]"
-//                         " Restoring top of RAS to: %i,"
-//                         " target: INVALID_TARGET\n", tid, squashed_sn,
-//                         pred_hist.front().RASIndex);
-//             }
-
-//             RAS[tid].restore(pred_hist.front().RASIndex,
-//                              pred_hist.front().RASTarget.get());
-//         } else if (pred_hist.front().wasCall
-//                    && pred_hist.front().pushedRAS) {
-//              // Was a call but predicated false. Pop RAS here
-//              DPRINTF(Branch, "[tid:%i] [squash sn:%llu] Squashing"
-//                      "  Call [sn:%llu] PC: %s Popping RAS\n",
-//                      tid, squashed_sn,
-//                      pred_hist.front().seqNum, pred_hist.front().pc);
-//              RAS[tid].pop();
-//         }
-
-//         // This call should delete the bpHistory.
-//         squash(tid, pred_hist.front().bpHistory);
-//         if (iPred) {
-//             iPred->deleteIndirectInfo(tid,
-//                                       pred_hist.front().indirectHistory);
-//         }
-
-//         DPRINTF(Branch, "[tid:%i] [squash sn:%llu] "
-//                 "Removing history for [sn:%llu] "
-//                 "PC %#x\n", tid, squashed_sn, pred_hist.front().seqNum,
-//                 pred_hist.front().pc);
-
-//         pred_hist.pop_front();
-
-//         DPRINTF(Branch, "[tid:%i] [squash sn:%llu] predHist.size(): %i\n",
-//                 tid, squashed_sn, predHist[tid].size());
-//     }
-// }
-
-// void
-// LVPredUnit::squash(const InstSeqNum &squashed_sn,
-//                   const PCStateBase &corr_target,
-//                   bool actually_taken, ThreadID tid)
-// {
-//     // Now that we know that a branch was mispredicted, we need to undo
-//     // all the branches that have been seen up until this branch and
-//     // fix up everything.
-//     // NOTE: This should be call conceivably in 2 scenarios:
-//     // (1) After an branch is executed, it updates its status in the ROB
-//     //     The commit stage then checks the ROB update and sends a signal to
-//     //     the fetch stage to squash history after the mispredict
-//     // (2) In the decode stage, you can find out early if a unconditional
-//     //     PC-relative, branch was predicted incorrectly. If so, a signal
-//     //     to the fetch stage is sent to squash history after the mispredict
-
-//     History &pred_hist = predHist[tid];
-
-//     ++stats.condIncorrect;
-//     ppMisses->notify(1);
-
-//     DPRINTF(Branch, "[tid:%i] Squashing from sequence number %i, "
-//             "setting target to %s\n", tid, squashed_sn, corr_target);
-
-//     // Squash All Branches AFTER this mispredicted branch
-//     squash(squashed_sn, tid);
-
-//     // If there's a squash due to a syscall, there may not be an entry
-//     // corresponding to the squash.  In that case, don't bother trying to
-//     // fix up the entry.
-//     if (!pred_hist.empty()) {
-
-//         auto hist_it = pred_hist.begin();
-//         //HistoryIt hist_it = find(pred_hist.begin(), pred_hist.end(),
-//         //                       squashed_sn);
-
-//         //assert(hist_it != pred_hist.end());
-//         if (pred_hist.front().seqNum != squashed_sn) {
-//             DPRINTF(Branch, "Front sn %i != Squash sn %i\n",
-//                     pred_hist.front().seqNum, squashed_sn);
-
-//             assert(pred_hist.front().seqNum == squashed_sn);
-//         }
-
-
-//         if ((*hist_it).usedRAS) {
-//             ++stats.RASIncorrect;
-//             DPRINTF(Branch,
-//                     "[tid:%i] [squash sn:%llu] Incorrect RAS [sn:%llu]\n",
-//                     tid, squashed_sn, hist_it->seqNum);
-//         }
-
-//         // There are separate functions for in-order and out-of-order
-//         // branch prediction, but not for update. Therefore, this
-//         // call should take into account that the mispredicted branch may
-//         // be on the wrong path (i.e., OoO execution), and that the counter
-//         // counter table(s) should not be updated. Thus, this call should
-//         // restore the state of the underlying predictor, for instance the
-//         // local/global histories. The counter tables will be updated when
-//         // the branch actually commits.
-
-//         // Remember the correct direction for the update at commit.
-//         pred_hist.front().predTaken = actually_taken;
-//         pred_hist.front().target = corr_target.instAddr();
-
-//         update(tid, (*hist_it).pc, actually_taken,
-//                pred_hist.front().bpHistory, true, pred_hist.front().inst,
-//                corr_target.instAddr());
-
-//         if (iPred) {
-//             iPred->changeDirectionPrediction(tid,
-//                 pred_hist.front().indirectHistory, actually_taken);
-//         }
-
-//         if (actually_taken) {
-//             if (hist_it->wasReturn && !hist_it->usedRAS) {
-//                  DPRINTF(Branch, "[tid:%i] [squash sn:%llu] "
-//                         "Incorrectly predicted "
-//                         "return [sn:%llu] PC: %#x\n", tid, squashed_sn,
-//                         hist_it->seqNum,
-//                         hist_it->pc);
-//                  RAS[tid].pop();
-//                  hist_it->usedRAS = true;
-//             }
-//             if (hist_it->wasIndirect) {
-//                 ++stats.indirectMispredicted;
-//                 if (iPred) {
-//                     iPred->recordTarget(
-//                         hist_it->seqNum, pred_hist.front().indirectHistory,
-//                         corr_target, tid);
-//                 }
-//             } else {
-//                 DPRINTF(Branch,"[tid:%i] [squash sn:%llu] "
-//                         "LVPT Update called for [sn:%llu] "
-//                         "PC %#x\n", tid, squashed_sn,
-//                         hist_it->seqNum, hist_it->pc);
-
-//                 LVPT.update(hist_it->pc, corr_target, tid);
-//             }
-//         } else {
-//            //Actually not Taken
-//            if (hist_it->usedRAS) {
-//                 DPRINTF(Branch,
-//                         "[tid:%i] [squash sn:%llu] Incorrectly predicted "
-//                         "return [sn:%llu] PC: %#x Restoring RAS\n", tid,
-//                         squashed_sn,
-//                         hist_it->seqNum, hist_it->pc);
-//                 DPRINTF(Branch,
-//                         "[tid:%i] [squash sn:%llu] Restoring top of RAS "
-//                         "to: %i, target: %s\n", tid, squashed_sn,
-//                         hist_it->RASIndex, *hist_it->RASTarget);
-//                 RAS[tid].restore(hist_it->RASIndex,
-//                                  hist_it->RASTarget.get());
-//                 hist_it->usedRAS = false;
-//            } else if (hist_it->wasCall && hist_it->pushedRAS) {
-//                  //Was a Call but predicated false. Pop RAS here
-//                  DPRINTF(Branch,
-//                         "[tid:%i] [squash sn:%llu] "
-//                         "Incorrectly predicted "
-//                         "Call [sn:%llu] PC: %s Popping RAS\n",
-//                         tid, squashed_sn,
-//                         hist_it->seqNum, hist_it->pc);
-//                  RAS[tid].pop();
-//                  hist_it->pushedRAS = false;
-//            }
-//         }
-//     } else {
-//         DPRINTF(Branch, "[tid:%i] [sn:%llu] pred_hist empty, can't "
-//                 "update\n", tid, squashed_sn);
-//     }
-// }
-
-// void
-// LVPredUnit::dump()
-// {
-//     int i = 0;
-//     for (const auto& ph : predHist) {
-//         if (!ph.empty()) {
-//             auto pred_hist_it = ph.begin();
-
-//             cprintf("predHist[%i].size(): %i\n", i++, ph.size());
-
-//             while (pred_hist_it != ph.end()) {
-//                 cprintf("sn:%llu], PC:%#x, tid:%i, predTaken:%i, "
-//                         "bpHistory:%#x\n",
-//                         pred_hist_it->seqNum, pred_hist_it->pc,
-//                         pred_hist_it->tid, pred_hist_it->predTaken,
-//                         pred_hist_it->bpHistory);
-//                 pred_hist_it++;
-//             }
-
-//             cprintf("\n");
-//         }
-//     }
-// }
-
-// } // namespace branch_prediction
-// } // namespace gem5
+#include "debug/Load.hh"
+
+namespace gem5
+{
+
+namespace load_value_prediction
+{
+
+LVPredUnit::LVPredUnit(const Params &params)
+    : SimObject(params),
+      numThreads(params.numThreads),
+      loadPredHist(numThreads),
+      loadValuePredTable(params.numEntries,
+                        params.instShiftAmt,
+                        params.numThreads),
+      stats(this),
+      instShiftAmt(params.instShiftAmt)
+{}
+
+LVPredUnit::LVPredUnitStats::LVPredUnitStats(statistics::Group *parent)
+    : statistics::Group(parent),
+      ADD_STAT(LVPTLookups, statistics::units::Count::get(),
+               "Number of LVPT lookups"),
+      ADD_STAT(predictedIncorrect, statistics::units::Count::get(),
+               "Number of incorrect predictions"),
+
+{}
+
+probing::PMUUPtr
+LVPredUnit::pmuProbePoint(const char *name)
+{
+    probing::PMUUPtr ptr;
+    ptr.reset(new probing::PMU(getProbeManager(), name));
+
+    return ptr;
+}
+
+void
+LVPredUnit::regProbePoints()
+{
+    ppLoads = pmuProbePoint("Loads");
+    ppMisses = pmuProbePoint("Misses");
+}
+
+void
+LVPredUnit::drainSanityCheck() const
+{
+    // We shouldn't have any outstanding requests when we resume from
+    // a drained system.
+    for ([[maybe_unused]] const auto& ph : loadPredHist)
+        assert(ph.empty());
+}
+
+void
+LVPredUnit::update(const InstSeqNum &done_sn, ThreadID tid)
+{
+    DPRINTF(Load, "[tid:%i] Committing loads until "
+            "sn:%llu]\n", tid, done_sn);
+
+    while (!loadPredHist[tid].empty() &&
+           loadPredHist[tid].back().loadSeqNum <= done_sn) {
+        // Update the load value predictor with the correct results.
+        lctUpdate(tid, loadPredHist[tid].back().pc,
+                    loadPredHist[tid].back().correct,
+                    false,
+                    loadPredHist[tid].back().inst,
+                    loadPredHist[tid].back().data);
+
+        loadPredHist[tid].pop_back();
+    }
+}
+
+void
+LVPredUnit::squash(const InstSeqNum &squashed_sn, ThreadID tid)
+{
+    History &load_pred_hist = loadPredHist[tid];
+
+    while (!load_pred_hist.empty() &&
+           load_pred_hist.front().loadSeqNum > squashed_sn) {
+
+        DPRINTF(Load, "[tid:%i] [squash sn:%llu] "
+                "Removing history for [sn:%llu] "
+                "PC %#x\n", tid, squashed_sn,
+                load_pred_hist.front().loadSeqNum,
+                load_pred_hist.front().pc);
+
+        load_pred_hist.pop_front();
+
+        DPRINTF(Load, "[tid:%i] [squash sn:%llu] loadPredHist.size(): %i\n",
+                tid, squashed_sn, loadPredHist[tid].size());
+    }
+}
+
+void
+LVPredUnit::squash(const InstSeqNum &squashed_sn,
+                  const uint64_t &corr_data, ThreadID tid)
+{
+    // Now that we know that a load was mispredicted, we need to undo
+    // all the loads that have been seen up until this load and
+    // fix up everything.
+    // NOTE: This should be call conceivably in only 1 scenario:
+    //  After a load is executed, it updates its status in the ROB in the
+    //  commit stage then checks the ROB update and sends a signal to
+    //  the fetch stage to squash the history after the mispredict.
+
+    History &load_pred_hist = loadPredHist[tid];
+
+    ++stats.predictedIncorrect;
+    ppMisses->notify(1);
+
+    DPRINTF(Load, "[tid:%i] Squashing from sequence number %i, "
+            "setting data to %s\n", tid, squashed_sn, corr_data);
+
+    // Squash All Branches AFTER this mispredicted branch
+    squash(squashed_sn, tid);
+
+    // If there's a squash due to a syscall, there may not be an entry
+    // corresponding to the squash.  In that case, don't bother trying to
+    // fix up the entry.
+    if (!load_pred_hist.empty()) {
+
+        auto hist_it = load_pred_hist.begin();
+        //HistoryIt hist_it = find(load_pred_hist.begin(),
+        //                        load_pred_hist.end(),
+        //                        squashed_sn);
+
+        //assert(hist_it != load_pred_hist.end());
+        if (load_pred_hist.front().loadSeqNum != squashed_sn) {
+            DPRINTF(Load, "Front sn %i != Squash sn %i\n",
+                    load_pred_hist.front().loadSeqNum, squashed_sn);
+
+            assert(load_pred_hist.front().loadSeqNum == squashed_sn);
+        }
+
+        // There are separate functions for in-order and out-of-order
+        // branch prediction, but not for update. Therefore, this
+        // call should take into account that the mispredicted branch may
+        // be on the wrong path (i.e., OoO execution), and that the counter
+        // table(s) should not be updated. Thus, this call should restore the
+        // state of the underlying predictor, for instance the local/global
+        // histories. The counter tables will be updated when the branch
+        // actually commits.
+
+        // Remember the correct direction for the update at commit.
+        load_pred_hist.front().predTaken = actually_taken;
+        load_pred_hist.front().target = corr_target.instAddr();
+
+        lctUpdate(tid, (*hist_it).pc, correct, true,
+               load_pred_hist.front().inst,
+               corr_data);
+
+        if (!correct) {
+            DPRINTF(Load,"[tid:%i] [squash sn:%llu] "
+                    "LVPT Update called for [sn:%llu] "
+                    "PC %#x\n", tid, squashed_sn,
+                    hist_it->loadSeqNum, hist_it->pc);
+
+            LVPT.update(hist_it->pc, corr_data, tid);
+        } else {
+           // prediction was incorrect
+        }
+    } else {
+        DPRINTF(Load, "[tid:%i] [sn:%llu] load_pred_hist empty, can't "
+                "update\n", tid, squashed_sn);
+    }
+}
+
+void
+LVPredUnit::lctUpdate(ThreadID tid, Addr load_addr, bool correct,
+                bool squashed, const StaticInstPtr &inst, uint8_t *corrData)
+{
+    unsigned local_predictor_idx;
+
+    // No state to restore, and we do not update on the wrong
+    // path.
+    if (squashed) {
+        return;
+    }
+
+    // Update the local predictor.
+    local_predictor_idx = getLCTIndex(load_addr);
+
+    DPRINTF(Fetch, "Looking up index %#x\n", local_predictor_idx);
+
+    if (correct) {
+        DPRINTF(Fetch, "LCT entry incremented.\n");
+        loadClassTable[local_predictor_idx]++;
+    } else {
+        DPRINTF(Fetch, "LCT entry decremented.\n");
+        loadClassTable[local_predictor_idx]--;
+    }
+}
+
+inline
+LVPredUnit::LoadClass
+LVPredUnit::getLoadClass(uint8_t &count)
+{
+    switch(count) {
+      case 0:
+        return LoadClass::UNPREDICTABLE;
+      case 1:
+        return LoadClass::UNPREDICTABLE;
+      case 2:
+        return LoadClass::PREDICTABLE;
+      default:
+        return LoadClass::CONSTANT;
+    }
+}
+
+inline
+unsigned
+LVPredUnit::getLCTIndex(Addr &load_addr)
+{
+    return (load_addr >> instShiftAmt) & indexMask;
+}
+
+void
+LVPredUnit::dump()
+{
+    int i = 0;
+    for (const auto& ph : loadPredHist) {
+        if (!ph.empty()) {
+            auto pred_hist_it = ph.begin();
+
+            cprintf("loadPredHist[%i].size(): %i\n", i++, ph.size());
+
+            while (pred_hist_it != ph.end()) {
+                cprintf("sn:%llu], PC:%#x, tid:%i, predTaken:%i, "
+                        "bpHistory:%#x\n",
+                        pred_hist_it->loadSeqNum, pred_hist_it->pc,
+                        pred_hist_it->tid, pred_hist_it->predTaken,
+                        pred_hist_it->bpHistory);
+                pred_hist_it++;
+            }
+
+            cprintf("\n");
+        }
+    }
+}
+
+} // namespace branch_prediction
+} // namespace gem5

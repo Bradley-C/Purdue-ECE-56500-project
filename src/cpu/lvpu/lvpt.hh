@@ -45,8 +45,8 @@ class LoadValuePredictionTable
   private:
     struct LVPTEntry
     {
-        /** The entry's value. */
-        uint8_t value;
+        /** The entry's data. */
+        uint8_t *data;
 
         /** The entry's thread id. */
         ThreadID tid;
@@ -62,24 +62,24 @@ class LoadValuePredictionTable
      *  @param instShiftAmt Offset amount for instructions to ignore alignment.
      */
     LoadValuePredictionTable(unsigned numEntries,
-                unsigned instShiftAmt, unsigned numThreads);
+                             unsigned instShiftAmt, unsigned numThreads);
 
     void reset();
 
     /** Checks if a value is in the LVPT.
      *  @param inst_PC The address of the load to look up.
      *  @param tid The thread id.
-     *  @return Whether or not the value exists in the LVPT (i.e. the entry is
-     *  not still initialized to zero).
+     *  @return Whether the data exists in the LVPT (i.e. the entry has been
+     *  written after initialization).
      */
     bool valid(Addr instPC, ThreadID tid);
 
     /** Updates the LVPT with the mispredicted value of a load.
      *  @param inst_pc The address of the load being updated.
-     *  @param new_value The value at the address that was loaded.
+     *  @param new_data The data at the address that was loaded.
      *  @param tid The thread id.
      */
-    void update(Addr inst_pc, const uint64_t &new_value, ThreadID tid);
+    void update(Addr inst_pc, const uint8_t *new_data, ThreadID tid);
 
   private:
     /** Returns the index into the LVPT, based on the load's PC.
@@ -89,7 +89,7 @@ class LoadValuePredictionTable
     inline unsigned getIndex(Addr instPC, ThreadID tid);
 
     /** The actual LVPT. */
-    std::vector<LVPTEntry> lvpt;
+    std::vector<LVPTEntry> LVPT;
 
     /** The number of entries in the LVPT. */
     unsigned numEntries;

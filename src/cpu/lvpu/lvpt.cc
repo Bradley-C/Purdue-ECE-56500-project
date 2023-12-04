@@ -32,97 +32,97 @@
 #include "base/trace.hh"
 #include "debug/Fetch.hh"
 
-// namespace gem5
-// {
+namespace gem5
+{
 
-// namespace load_value_prediction
-// {
+namespace load_value_prediction
+{
 
-// LoadValuePredictionTable::LoadValuePredictionTable(unsigned _numEntries,
-//                        unsigned _instShiftAmt,
-//                        unsigned _num_threads)
-//     : numEntries(_numEntries),
-//       instShiftAmt(_instShiftAmt),
-//       log2NumThreads(floorLog2(_num_threads))
-// {
-//     DPRINTF(Fetch, "LVPT: Creating LVPT object.\n");
+LoadValuePredictionTable::LoadValuePredictionTable(unsigned _numEntries,
+                       unsigned _instShiftAmt,
+                       unsigned _num_threads)
+    : numEntries(_numEntries),
+      instShiftAmt(_instShiftAmt),
+      log2NumThreads(floorLog2(_num_threads))
+{
+    DPRINTF(Fetch, "LVPT: Creating LVPT object.\n");
 
-//     if (!isPowerOf2(numEntries)) {
-//         fatal("LVPT entries is not a power of 2!");
-//     }
+    if (!isPowerOf2(numEntries)) {
+        fatal("LVPT entries is not a power of 2!");
+    }
 
-//     lvpt.resize(numEntries);
+    lvpt.resize(numEntries);
 
-//     for (unsigned i = 0; i < numEntries; ++i) {
-//         lvpt[i].valid = false;
-//     }
+    for (unsigned i = 0; i < numEntries; ++i) {
+        lvpt[i].valid = false;
+    }
 
-//     idxMask = numEntries - 1;
-// }
+    idxMask = numEntries - 1;
+}
 
-// void
-// LoadValuePredictionTable::reset()
-// {
-//     for (unsigned i = 0; i < numEntries; ++i) {
-//         lvpt[i].valid = false;
-//     }
-// }
+void
+LoadValuePredictionTable::reset()
+{
+    for (unsigned i = 0; i < numEntries; ++i) {
+        lvpt[i].valid = false;
+    }
+}
 
-// inline
-// unsigned
-// LoadValuePredictionTable::getIndex(Addr instPC, ThreadID tid)
-// {
-//     // Need to shift PC over by the word offset.
-//     return ((instPC >> instShiftAmt)
-//             ^ (tid << (instShiftAmt - log2NumThreads)))
-//             & idxMask;
-// }
+inline
+unsigned
+LoadValuePredictionTable::getIndex(Addr instPC, ThreadID tid)
+{
+    // Need to shift PC over by the word offset.
+    return ((instPC >> instShiftAmt)
+            ^ (tid << (instShiftAmt - log2NumThreads)))
+            & idxMask;
+}
 
-// bool
-// LoadValuePredictionTable::valid(Addr instPC, ThreadID tid)
-// {
-//     unsigned lvpt_idx = getIndex(instPC, tid);
+bool
+LoadValuePredictionTable::valid(Addr instPC, ThreadID tid)
+{
+    unsigned lvpt_idx = getIndex(instPC, tid);
 
-//     assert(lvpt_idx < numEntries);
+    assert(lvpt_idx < numEntries);
 
-//     if (lvpt[lvpt_idx].valid
-//         && lvpt[lvpt_idx].tid == tid) {
-//         return true;
-//     } else {
-//         return false;
-//     }
-// }
+    if (lvpt[lvpt_idx].valid
+        && lvpt[lvpt_idx].tid == tid) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
-// // @todo Create some sort of return struct that has both whether or not the
-// // address is valid, and also the address.  For now will just use
-// // addr = 0 to represent invalid entry.
-// const uint8_t* *
-// LoadValuePredictionTable::lookup(Addr inst_pc, ThreadID tid)
-// {
-//     unsigned lvpt_idx = getIndex(inst_pc, tid);
+// @todo Create some sort of return struct that has both whether or not the
+// value is valid, and also the value.  For now will just use
+// value = 0 to represent invalid entry.
+const uint8_t* *
+LoadValuePredictionTable::lookup(Addr inst_pc, ThreadID tid)
+{
+    unsigned lvpt_idx = getIndex(inst_pc, tid);
 
-//     assert(lvpt_idx < numEntries);
+    assert(lvpt_idx < numEntries);
 
-//     if (lvpt[lvpt_idx].valid
-//         && lvpt[lvpt_idx].tid == tid) {
-//         return &lvpt[lvpt_idx].value.get();
-//     } else {
-//         return nullptr;
-//     }
-// }
+    if (lvpt[lvpt_idx].valid
+        && lvpt[lvpt_idx].tid == tid) {
+        return &lvpt[lvpt_idx].value.get();
+    } else {
+        return nullptr;
+    }
+}
 
-// void
-// LoadValuePredictionTable::update(Addr inst_pc, const uint8_t *value,
-//                                  ThreadID tid)
-// {
-//     unsigned lvpt_idx = getIndex(inst_pc, tid);
+void
+LoadValuePredictionTable::update(Addr inst_pc, const uint8_t *value,
+                                 ThreadID tid)
+{
+    unsigned lvpt_idx = getIndex(inst_pc, tid);
 
-//     assert(lvpt_idx < numEntries);
+    assert(lvpt_idx < numEntries);
 
-//     lvpt[lvpt_idx].tid = tid;
-//     lvpt[lvpt_idx].valid = true;
-//     set(lvpt[lvpt_idx].value, *value);
-// }
+    lvpt[lvpt_idx].tid = tid;
+    lvpt[lvpt_idx].valid = true;
+    set(lvpt[lvpt_idx].value, *value);
+}
 
-// } // namespace branch_prediction
-// } // namespace gem5
+} // namespace branch_prediction
+} // namespace gem5

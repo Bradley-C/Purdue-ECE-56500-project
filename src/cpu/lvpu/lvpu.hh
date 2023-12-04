@@ -51,10 +51,10 @@
 #include "cpu/lvpu/cvu.hh"
 #include "cpu/lvpu/lvpt.hh"
 #include "cpu/static_inst.hh"
+// #include "params/LoadValuePredictor.hh"
 #include "sim/probe/pmu.hh"
 #include "sim/sim_object.hh"
 
-// #include "params/LoadValuePredictor.hh"
 namespace gem5
 {
 namespace load_value_prediction
@@ -81,12 +81,13 @@ class LVPredUnit : public SimObject
     /**
      * Predicts the value of the load.
      * @param inst The load instruction.
-     * @param value The predicted value is passed back through this parameter.
+     * @param PC The load PC.
+     * @param data The predicted value is passed back through this parameter.
      * @param tid The thread id.
-     * @return Returns whether the lvpt entry was valid or not.
+     * @return Returns whether the lvpt entry is predictable.
      */
     bool predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
-                 uint8_t *value, ThreadID tid);
+                 PCStateBase &pc, uint8_t *data, ThreadID tid);
 
     /**
      * Tells the load value predictor to commit any updates until the given
@@ -109,11 +110,11 @@ class LVPredUnit : public SimObject
      * corrects that sn's update with the proper value.
      * @param squashed_sn The sequence number to squash any younger updates up
      * until.
-     * @param corr_value The correct branch target.
+     * @param corr_data The correct load data.
      * @param tid The thread id.
      */
     void squash(const InstSeqNum &squashed_sn,
-                const PCStateBase &corr_target,
+                const uint64_t &corr_data,
                 ThreadID tid);
 
     /**
@@ -134,38 +135,19 @@ class LVPredUnit : public SimObject
      /**
      * If a load cannot be predicted, because the LVPT value is invalid,
      * this function sets the appropriate counter in the load classification
-     * table to not predictable.
+     * table to "unpredictable".
      * @param inst_PC The PC to look up the load in the LCT.
      * @param lct Pointer that will be set to an object that
      * has the load predictor state associated with the lookup.
      */
     virtual void lvptUpdate(ThreadID tid, Addr instPC, void * &lct) = 0;
 
-     /**
-     * If a load cannot be predicted, because the CVU value is invalid,
-     * this function sets the appropriate counter in the load classification
-     * table to not predictable.
-     * @param inst_PC The PC to look up the load in the LCT.
-     * @param lct Pointer that will be set to an object that
-     * has the load predictor state associated with the lookup.
-     */
-    virtual void cvuUpdate(ThreadID tid, Addr instPC, void * &lct) = 0;
-
     /**
      * Looks up a given PC in the LVPT to see if a valid entry exists.
      * @param inst_PC The PC to look up.
      * @return Whether the LVPT contains the given PC.
      */
-    bool LVPTValid(Addr instPC) { return LVPT.valid(instPC, 0); }
-
-    /**
-     * Looks up a given PC & data addr in the CVU to see if a valid entry
-     * exists.
-     * @param inst_PC The PC to look up.
-     * @return Whether the LVPT contains the given PC.
-     */
-    bool CVUValid(Addr instPC,  uint64_t &data_addr) { return CVU.valid(instPC
-                                                    ,data_addr, 0); }
+    bool lvptValid(Addr instPC) { return LVPT.valid(instPC, 0); }
 
     /**
      * Looks up a given PC in the LVPT to get the predicted value. The PC may
@@ -175,48 +157,38 @@ class LVPredUnit : public SimObject
      * @return The value at the address of the load.
      */
     const uint64_t value*
-    LVPTLookup(Addr inst_pc)
+    lvptLookup(Addr inst_pc)
     {
         return LVPT.lookup(inst_pc, 0);
     }
 
     /**
-     * Updates the LVPU with taken/not taken information.
+     * Updates the LCT with taken/not taken information.
      * @param inst_PC The load's PC that will be updated.
-     * @param predicted Whether the load was predicted on.
+     * @param correct Whether the load prediction was correct.
      * @param lct Pointer to the load predictor state that is
      * associated with the load lookup that is being updated.
      * @param squashed Set to true when this function is called during a
      * squash operation.
      * @param inst Static instruction information
-     * @param corrValue The resolved value at the load data address (only
+     * @param corrData The resolved data at the load data address (only
      * needed for squashed loads)
      * @todo Make this update flexible enough to handle a global predictor.
      */
-    virtual void update(ThreadID tid, Addr instPC, bool predicted,
-                   void *lct, bool squashed,
-                   const StaticInstPtr &inst, uint8_t *corrValue) = 0;
+    void lctUpdate(ThreadID tid, Addr instPC, bool correct,
+                        bool squashed, const StaticInstPtr &inst,
+                        uint8_t *corrData) = 0;
     /**
      * Updates the LVPT with the value of a load address.
      * @param inst_PC The load's PC that will be updated.
      * @param value The load's value that will be added to the LVPT.
      */
     void
-    LVPTUpdate(Addr instPC, const uint8_t *value)
+    lvptUpdate(Addr instPC, const uint8_t *value)
     {
         LVPT.update(instPC, value, 0);
     }
-   /**
-     * Updates the CVU with the value of a load address when the LCT goes to
-     *  constant.
-     * @param inst_PC The load's PC that will be updated.
-     * @param value The load's value that will be added to the CVU.
-     */
-    void
-    CVUUpdate(Addr instPC, const uint8_t *value)
-    {
-        CVU.update(instPC, value, 0);
-    }
+
     void dump();
 
   private:
@@ -224,31 +196,29 @@ class LVPredUnit : public SimObject
     {
         /**
          * Makes a predictor history struct that contains any
-         * information needed to update the predictor, LVPT, and CVU.
+         * information needed to update the predictor and LVPT.
          */
-        PredictorHistory(const InstSeqNum &seq_num, Addr instPC,
-                         bool _predicted, ThreadID _tid,
+        PredictorHistory(const InstSeqNum &load_seq_num, Addr instPC,
+                         bool _correct, ThreadID _tid,
                          const StaticInstPtr & inst)
-            : seqNum(seq_num), pc(instPC), tid(_tid),
-              predicted(_predicted), inst(inst)
+            : loadSeqNum(load_seq_num), pc(instPC), tid(_tid),
+              correct(_correct), inst(inst)
         {}
 
         PredictorHistory(const PredictorHistory &other) :
-            seqNum(other.seqNum), pc(other.pc), RASIndex(other.RASIndex),
-            tid(other.tid), predicted(other.predicted),
-            value(other.value), inst(other.inst)
-        {
-            set(RASTarget, other.RASTarget);
-        }
+            loadSeqNum(other.loadSeqNum), pc(other.pc),
+            tid(other.tid), correct(other.correct),
+            data(other.data), inst(other.inst)
+        {}
 
         bool
         operator==(const PredictorHistory &entry) const
         {
-            return this->seqNum == entry.seqNum;
+            return this->loadSeqNum == entry.loadSeqNum;
         }
 
         /** The sequence number for the predictor history entry. */
-        InstSeqNum seqNum;
+        InstSeqNum loadSeqNum;
 
         /** The PC associated with the sequence number. */
         Addr pc;
@@ -256,21 +226,21 @@ class LVPredUnit : public SimObject
         /** The thread id. */
         ThreadID tid;
 
-        /** Whether or not it was predicted. */
-        bool predicted;
+        /** Whether the value in the lvpt was correct. */
+        bool correct;
 
         /** Value of the load. First it is predicted, and fixed later
          *  if necessary
          */
-        uint8_t *value = nullptr;
+        uint8_t *data = nullptr;
 
-        /** The load instrction */
+        /** The load instruction */
         const StaticInstPtr inst;
     };
 
     typedef std::deque<PredictorHistory> History;
 
-    /** Number of the threads for which the branch history is maintained. */
+    /** Number of the threads for which the load history is maintained. */
     const unsigned numThreads;
 
 
@@ -279,21 +249,55 @@ class LVPredUnit : public SimObject
      * as instructions are committed, or restore it to the proper state after
      * a squash.
      */
-    std::vector<History> predHist;
+    std::vector<History> loadPredHist;
 
-    /** The BTB. */
-    LoadValuePredictionTable LVPT;
+    /** The LVPT. */
+    LoadValuePredictionTable loadValuePredTable;
 
-    /** The 2nd extended BTB. */
-    ConstantVerificationUnit CVU;
     struct LVPredUnitStats : public statistics::Group
     {
         LVPredUnitStats(statistics::Group *parent);
         /** Stat for number of LVPT lookups. */
-        statistics::Scalar LVPTLookups;
+        statistics::Scalar lvptLookups;
+        /** Stat for number of loads that were predicted. */
+        statistics::Scalar predicted;
         /** Stat for number of loads predicted incorrectly. */
         statistics::Scalar predictedIncorrect;
     } stats;
+
+    typedef enum LoadClass
+    {
+      UnpredictableStrong,
+      UnpredictableWeak,
+      Predictable,
+      Constant
+    } LoadClass;
+
+    /**
+     *  Returns the taken/not taken prediction given the value of the
+     *  counter.
+     *  @param count The value of the counter.
+     *  @return The prediction based on the counter value.
+     */
+    inline LoadClass getLoadClass(uint8_t &count);
+
+    /** Calculates the local index based on the PC. */
+    inline unsigned getLCTIndex(Addr &load_addr);
+
+    /** Size of the local predictor. */
+    const unsigned localPredictorSize;
+
+    /** Number of bits of the local predictor's counters. */
+    const unsigned localCtrBits;
+
+    /** Number of sets. */
+    const unsigned localPredictorSets;
+
+    /** Array of counters that make up the load classification table. */
+    std::vector<SatCounter8> loadClassTable;
+
+    /** Mask to get index bits. */
+    const unsigned indexMask;
 
   protected:
     /** Number of bits to shift instructions by for predictor addresses. */
@@ -315,9 +319,9 @@ class LVPredUnit : public SimObject
 
 
     /**
-     * Branches seen by the branch predictor
+     * Branches seen by the load value predictor
      *
-     * @note This counter includes speculative branches.
+     * @note This counter includes speculative loads.
      */
     probing::PMUUPtr ppLoads;
 

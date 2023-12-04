@@ -1,4 +1,4 @@
-build
+build/
 configs/spec2k6.old
 parser.out
 parsetab.py
