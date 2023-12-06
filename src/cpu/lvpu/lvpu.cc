@@ -118,18 +118,17 @@ LVPredUnit::drainSanityCheck() const
         assert(ph.empty());
 }
 
-bool
+LVPredUnit::eLoadClass
 LVPredUnit::getPrediction(const StaticInstPtr &inst,
                           const InstSeqNum &loadSeqNum,
-                          PCStateBase &pc, LVPResult &result, ThreadID tid)
+                          PCStateBase &pc, uint64_t &data, ThreadID tid)
 {
     ++stats.lvpuLookups;
     ppLoads->notify(1);
 
     // Get the load classification and the current value in the LVPT.
-    LoadClass loadClass = getLoadClass(tid, pc.instAddr(), load_history);
-    result.loadClass = loadClass;
-    result.data = lvptLookup(pc.instAddr());
+    eLoadClass loadClass = getLoadClass(tid, pc.instAddr());
+    lvptLookup(pc.instAddr(), tid, data);
     bool predictable = (loadClass == Predictable) || (loadClass == Constant);
     if (predictable) ++stats.predicted;
 
@@ -141,9 +140,8 @@ LVPredUnit::getPrediction(const StaticInstPtr &inst,
     DPRINTF(Load,
             "[tid:%i] [sn:%llu] Creating prediction history for PC %s\n",
             tid, loadSeqNum, pc);
-    PredictorHistory load_predict_record(loadSeqNum, pc.instAddr(),
-                                         predictable, loadClass,
-                                         tid, inst, result.data);
+    PredictorHistory load_predict_record(loadSeqNum, pc.instAddr(), loadClass,
+                                         tid, inst, data);
     loadPredHist[tid].push_front(load_predict_record);
 
     DPRINTF(Load,
@@ -151,11 +149,11 @@ LVPredUnit::getPrediction(const StaticInstPtr &inst,
             "loadPredHist.size(): %i\n",
             tid, loadSeqNum, loadPredHist[tid].size());
 
-    return predictable;
+    return loadClass;
 }
 
 void
-LVPredUnit::update(const InstSeqNum &done_sn, ThreadID tid)
+LVPredUnit::update(const InstSeqNum &done_sn, uint64_t corrData, ThreadID tid)
 {
     DPRINTF(Load, "[tid:%i] Committing loads until "
             "sn:%llu]\n", tid, done_sn);
@@ -164,18 +162,14 @@ LVPredUnit::update(const InstSeqNum &done_sn, ThreadID tid)
            loadPredHist[tid].back().loadSeqNum <= done_sn) {
         // Update the load value predictor with the correct results.
         lctUpdate(loadPredHist[tid].back().pc,
-                    loadPredHist[tid].back().correct,
-                    loadPredHist[tid].back().data);
-        LVPT.update(loadPredHist[tid].back().pc,
-                    loadPredHist[tid].back().data,
-                    tid)
+                    loadPredHist[tid].back().correct);
+        LVPT.update(loadPredHist[tid].back().pc, corrData, tid)
         loadPredHist[tid].pop_back();
     }
 }
 
 void
-LVPredUnit::lctUpdate(const Addr load_addr, const bool correct,
-                      const uint64_t &corrData)
+LVPredUnit::lctUpdate(const Addr load_addr, const bool correct)
 {
     unsigned lctIndex;
 
@@ -194,9 +188,11 @@ LVPredUnit::lctUpdate(const Addr load_addr, const bool correct,
 }
 
 
-LVPredUnit::LoadClass
-LVPredUnit::getLoadClass(uint8_t &count)
+LVPredUnit::eLoadClass
+LVPredUnit::getLoadClass(ThreadID tid, Addr pc)
 {
+    unsigned lctIndex = getLCTIndex(pc);
+    unsigned count = loadClassTable[lctIndex];
     switch(count) {
         case 0:
             return LoadClass::UnpredictableStrong;
@@ -210,7 +206,7 @@ LVPredUnit::getLoadClass(uint8_t &count)
 }
 
 std::string
-getLoadClassString(LoadClass loadClass)
+getLoadClassString(eLoadClass loadClass)
 {
     std::string loadClassString;
     switch(loadClass) {
@@ -235,7 +231,7 @@ getLoadClassString(LoadClass loadClass)
 
 inline
 unsigned
-LVPredUnit::getLCTIndex(Addr &load_addr)
+LVPredUnit::getLCTIndex(const Addr load_addr)
 {
     return (load_addr >> instShiftAmt) & lctIndexMask;
 }

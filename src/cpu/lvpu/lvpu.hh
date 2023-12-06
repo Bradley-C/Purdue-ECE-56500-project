@@ -81,93 +81,6 @@ class LVPredUnit : public SimObject
         statistics::Scalar predictedIncorrect;
     } stats;
 
-    typedef enum LoadClass
-    {
-        UnpredictableStrong,
-        UnpredictableWeak,
-        Predictable,
-        Constant
-    } LoadClass;
-
-    typedef struct LVPResult
-    {
-        uint64_t data;
-        LoadClass loadClass;
-    } LVPResult;
-
-    struct PredictorHistory
-    {
-        /**
-         * Makes a predictor history struct that contains any
-         * information needed to update the predictor and LVPT.
-         */
-        PredictorHistory(const InstSeqNum &load_seq_num, Addr instPC,
-                         bool _predictable, LoadClass _loadClass,
-                         ThreadID _tid, const StaticInstPtr & inst,
-                         uint64_t _data)
-            : loadSeqNum(load_seq_num), pc(instPC), predictable(_predictable),
-              loadClass(_loadClass), tid(_tid), inst(inst), data(_data)
-        {}
-
-        PredictorHistory(const PredictorHistory &other) :
-            loadSeqNum(other.loadSeqNum), pc(other.pc),
-            predictable(other.predictable), loadClass(other.loadClass),
-            tid(other.tid), inst(other.inst), data(other.data),
-        {}
-
-        bool
-        operator==(const PredictorHistory &entry) const
-        {
-            return this->loadSeqNum == entry.loadSeqNum;
-        }
-
-        /** The sequence number for the predictor history entry. */
-        InstSeqNum loadSeqNum;
-
-        /** The PC associated with the sequence number. */
-        Addr pc;
-
-        /** Value of the load. First it is predicted, and fixed later
-         *  if necessary
-         */
-        uint64_t data;
-
-        /** The load instruction */
-        const StaticInstPtr inst;
-
-        /** The load classification*/
-        LoadClass loadClass;
-
-        /** The thread id. */
-        ThreadID tid;
-
-        /** Whether the load was predictable. */
-        bool predictable;
-    };
-
-    typedef std::deque<PredictorHistory> History;
-
-    /** Number of the threads for which the load history is maintained. */
-    const unsigned numThreads;
-
-    /**
-     * The per-thread predictor history. This is used to update the predictor
-     * as instructions are committed, or restore it to the proper state after
-     * a squash.
-     */
-    std::vector<History> loadPredHist;
-
-    /**
-     *  Returns the predictability of the load given the value of the
-     *  LCT entry.
-     *  @param count The value of the counter.
-     *  @return The prediction based on the counter value.
-     */
-    inline LoadClass getLoadClass(uint8_t &count);
-
-    /** Converts the LoadClass enum to a string and return it. */
-    std::string getLoadClassString(LoadClass loadClass);
-
     /** Calculates the local index based on the PC. */
     inline unsigned getLCTIndex(Addr &load_addr);
 
@@ -194,10 +107,10 @@ class LVPredUnit : public SimObject
      * @param inst_PC The PC to look up.
      * @return The value at the address of the load.
      */
-    uint64_t
-    lvptLookup(Addr inst_pc)
+    void
+    lvptLookup(const Addr inst_pc, const ThreadID tid, uint64_t &data)
     {
-        return LVPT.lookup(inst_pc, 0);
+        LVPT.lookup(inst_pc, tid, data);
     }
 
     /**
@@ -246,6 +159,25 @@ class LVPredUnit : public SimObject
     /** @} */
 
   public:
+    typedef enum eLoadClass
+    {
+        UnpredictableStrong,
+        UnpredictableWeak,
+        Predictable,
+        Constant
+    } eLoadClass;
+
+    /**
+     *  Returns the predictability of the load given the value of the
+     *  LCT entry.
+     *  @param count The value of the counter.
+     *  @return The prediction based on the counter value.
+     */
+    inline eLoadClass getLoadClass(ThreadID tid, uint8_t &count);
+
+    /** Converts the eLoadClass enum to a string and return it. */
+    std::string getLoadClassString(eLoadClass loadClass);
+
     /**
      * Predicts the value of the load.
      * @param inst The load instruction.
@@ -255,9 +187,9 @@ class LVPredUnit : public SimObject
      * @param tid The thread id.
      * @return Returns whether the lvpt entry is predictable.
      */
-    bool
+    eLoadClass
     getPrediction(const StaticInstPtr &inst, const InstSeqNum &loadSeqNum,
-                  PCStateBase &pc, LVPResult &result, ThreadID tid);
+                  PCStateBase &pc, uint64_t &data, ThreadID tid);
 
     typedef LVPUParams Params;
     /**
@@ -279,6 +211,65 @@ class LVPredUnit : public SimObject
     void update(const InstSeqNum &done_sn, ThreadID tid);
 
     void dump();
+
+  private:
+    struct PredictorHistory
+    {
+        /**
+         * Makes a predictor history struct that contains any
+         * information needed to update the predictor and LVPT.
+         */
+        PredictorHistory(const InstSeqNum &load_seq_num, Addr instPC,
+                         eLoadClass _loadClass, ThreadID _tid,
+                         const StaticInstPtr & inst, uint64_t _data)
+            : loadSeqNum(load_seq_num), pc(instPC), loadClass(_loadClass),
+              tid(_tid), inst(inst), data(_data)
+        {}
+
+        PredictorHistory(const PredictorHistory &other) :
+            loadSeqNum(other.loadSeqNum), pc(other.pc),
+            loadClass(other.loadClass), tid(other.tid), inst(other.inst),
+            data(other.data),
+        {}
+
+        bool
+        operator==(const PredictorHistory &entry) const
+        {
+            return this->loadSeqNum == entry.loadSeqNum;
+        }
+
+        /** The sequence number for the predictor history entry. */
+        InstSeqNum loadSeqNum;
+
+        /** The PC associated with the sequence number. */
+        Addr pc;
+
+        /** Value of the load. First it is predicted, and fixed later
+         *  if necessary
+         */
+        uint64_t data;
+
+        /** The load instruction */
+        const StaticInstPtr inst;
+
+        /** The load classification*/
+        eLoadClass loadClass;
+
+        /** The thread id. */
+        ThreadID tid;
+    };
+
+    typedef std::deque<PredictorHistory> History;
+
+    /** Number of the threads for which the load history is maintained. */
+    const unsigned numThreads;
+
+    /**
+     * The per-thread predictor history. This is used to update the predictor
+     * as instructions are committed, or restore it to the proper state after
+     * a squash.
+     */
+    std::vector<History> loadPredHist;
 };
 
 } // namespace load_value_prediction
