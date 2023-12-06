@@ -287,6 +287,11 @@ ForwardInstData::reportData(std::ostream &os) const
         os << ')';
     }
 }
+//void
+//ForwardInstData::set_LVPT()
+//{
+//   LVPT_value = 55;
+//}
 
 } // namespace minor
 } // namespace gem5

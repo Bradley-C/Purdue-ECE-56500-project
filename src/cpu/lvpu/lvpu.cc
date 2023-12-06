@@ -48,7 +48,9 @@
 #include "base/compiler.hh"
 #include "base/trace.hh"
 #include "config/the_isa.hh"
-#include "debug/Load.hh"
+#include "debug/Fetch.hh"
+
+//#include "debug/Load.hh"
 
 namespace gem5
 {
@@ -60,7 +62,7 @@ LVPredUnit::LVPredUnit(const Params &params)
     : SimObject(params),
       numThreads(params.numThreads),
       loadPredHist(numThreads),
-      LVPT(params.numEntries,
+      LVPT(params.LVPTEntries,
                         params.instShiftAmt,
                         params.numThreads),
       stats(this),
@@ -86,10 +88,10 @@ LVPredUnit::LVPredUnit(const Params &params)
 
 LVPredUnit::LVPredUnitStats::LVPredUnitStats(statistics::Group *parent)
     : statistics::Group(parent),
-      ADD_STAT(LVPTLookups, statistics::units::Count::get(),
+      ADD_STAT(lvpuLookups, statistics::units::Count::get(),
                "Number of LVPT lookups"),
       ADD_STAT(predictedIncorrect, statistics::units::Count::get(),
-               "Number of incorrect predictions"),
+               "Number of incorrect predictions")
 
 {}
 
@@ -132,22 +134,22 @@ LVPredUnit::getPrediction(const StaticInstPtr &inst,
     bool predictable = (loadClass == Predictable) || (loadClass == Constant);
     if (predictable) ++stats.predicted;
 
-    DPRINTF(Load, "[tid:%i] [sn:%llu] "
-            "Load predictor predicted %i for PC %s\n",
-            tid, loadSeqNum, predictable, pc);
+    //DPRINTF(Load, "[tid:%i] [sn:%llu] "
+    //        "Load predictor predicted %i for PC %s\n",
+    //        tid, loadSeqNum, predictable, pc);
 
     // append a record to the load prediction history table
-    DPRINTF(Load,
-            "[tid:%i] [sn:%llu] Creating prediction history for PC %s\n",
-            tid, loadSeqNum, pc);
+    //DPRINTF(Load,
+    //        "[tid:%i] [sn:%llu] Creating prediction history for PC %s\n",
+    //        tid, loadSeqNum, pc);
     PredictorHistory load_predict_record(loadSeqNum, pc.instAddr(), loadClass,
                                          tid, inst, data);
     loadPredHist[tid].push_front(load_predict_record);
 
-    DPRINTF(Load,
-            "[tid:%i] [sn:%llu] History entry added. "
-            "loadPredHist.size(): %i\n",
-            tid, loadSeqNum, loadPredHist[tid].size());
+    //DPRINTF(Load,
+    //        "[tid:%i] [sn:%llu] History entry added. "
+    //        "loadPredHist.size(): %i\n",
+    //        tid, loadSeqNum, loadPredHist[tid].size());
 
     return loadClass;
 }
@@ -155,15 +157,14 @@ LVPredUnit::getPrediction(const StaticInstPtr &inst,
 void
 LVPredUnit::update(const InstSeqNum &done_sn, uint64_t corrData, ThreadID tid)
 {
-    DPRINTF(Load, "[tid:%i] Committing loads until "
-            "sn:%llu]\n", tid, done_sn);
+    //DPRINTF(Load, "[tid:%i] Committing loads until "
+    //        "sn:%llu]\n", tid, done_sn);
 
     while (!loadPredHist[tid].empty() &&
            loadPredHist[tid].back().loadSeqNum <= done_sn) {
         // Update the load value predictor with the correct results.
-        lctUpdate(loadPredHist[tid].back().pc,
-                    loadPredHist[tid].back().correct);
-        LVPT.update(loadPredHist[tid].back().pc, corrData, tid)
+        lctUpdate(loadPredHist[tid].back().pc, false);
+        LVPT.update(loadPredHist[tid].back().pc, corrData, tid);
         loadPredHist[tid].pop_back();
     }
 }
@@ -195,42 +196,40 @@ LVPredUnit::getLoadClass(ThreadID tid, Addr pc)
     unsigned count = loadClassTable[lctIndex];
     switch(count) {
         case 0:
-            return LoadClass::UnpredictableStrong;
+            return LVPredUnit::eLoadClass::UnpredictableStrong;
         case 1:
-            return LoadClass::UnpredictableWeak;
+            return LVPredUnit::eLoadClass::UnpredictableWeak;
         case 2:
-            return LoadClass::Predictable;
+            return LVPredUnit::eLoadClass::Predictable;
         default:
-            return LoadClass::Constant;
+            return LVPredUnit::eLoadClass::Constant;
     }
 }
 
 std::string
-getLoadClassString(eLoadClass loadClass)
+getLoadClassString(LVPredUnit::eLoadClass loadClass)
 {
     std::string loadClassString;
     switch(loadClass) {
-        case UnpredictableStrong:
+        case LVPredUnit::eLoadClass::UnpredictableStrong:
             loadClassString = "UnpredictableStrong";
             return loadClassString;
-        case UnpredictableWeak:
+        case LVPredUnit::eLoadClass::UnpredictableWeak:
             loadClassString = "UnpredictableWeak";
             return loadClassString;
-        case Predictable:
+        case LVPredUnit::eLoadClass::Predictable:
             loadClassString = "Predictable";
             return loadClassString;
-        case Constant:
+        case LVPredUnit::eLoadClass::Constant:
             loadClassString = "Constant";
             return loadClassString;
         default:
-            DPRINTF(LVPU, "Invalid load class: %d. Values must use LoadClass
-                    enumeration. Returning null terminator.", loadClass);
             return "\0";
     }
 }
 
 inline
-unsigned
+unsigned int
 LVPredUnit::getLCTIndex(const Addr load_addr)
 {
     return (load_addr >> instShiftAmt) & lctIndexMask;
@@ -247,11 +246,11 @@ LVPredUnit::dump()
             cprintf("loadPredHist[%i].size(): %i\n", i++, ph.size());
 
             while (pred_hist_it != ph.end()) {
-                cprintf("sn:%llu], PC:%#x, tid:%i, predTaken:%i, "
-                        "bpHistory:%#x\n",
+                /*cprintf("sn:%llu], PC:%#x, tid:%i, predTaken:%i, "
+                        "loadPredHistory:%#x\n",
                         pred_hist_it->loadSeqNum, pred_hist_it->pc,
                         pred_hist_it->tid, pred_hist_it->predTaken,
-                        pred_hist_it->bpHistory);
+                        pred_hist_it->bpHistory);*/
                 pred_hist_it++;
             }
 

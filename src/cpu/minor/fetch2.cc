@@ -42,6 +42,7 @@
 #include "arch/generic/decoder.hh"
 #include "base/logging.hh"
 #include "base/trace.hh"
+#include "cpu/lvpu/lvpu.hh"
 #include "cpu/minor/pipeline.hh"
 #include "cpu/null_static_inst.hh"
 #include "cpu/pred/bpred_unit.hh"
@@ -74,6 +75,7 @@ Fetch2::Fetch2(const std::string &name,
     outputWidth(params.decodeInputWidth),
     processMoreThanOneInput(params.fetch2CycleInput),
     branchPredictor(*params.branchPred),
+    loadValuePredictor(*params.loadValuePred),
     fetchInfo(params.numThreads),
     threadPriority(0), stats(&cpu_)
 {
@@ -246,6 +248,15 @@ Fetch2::evaluate()
     ForwardInstData &insts_out = *out.inputWire;
     BranchData prediction;
     BranchData &branch_inp = *branchInp.outputWire;
+
+    //if (insts_out.LVPT_value != 55){
+    //insts_out.LVPT_value = 55;
+    //}
+
+    std::cout << "Pass or Fail in LCT: "
+    << branch_inp.pass_fail_LCT << std::endl;
+    std::cout << "New Value in LVPT: "
+    << branch_inp.new_LVPT_value << std::endl;
 
     assert(insts_out.isBubble());
 
@@ -557,6 +568,11 @@ Fetch2::evaluate()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->id.threadId].pushTail();
+
+    insts_out.LCT_value = loadValuePredictor.getPrediction(
+        dyn_inst->staticInst,dyn_inst->fetchSeqNum ,*dyn_inst->pc,
+        insts_out.LVPT_value, tid);
+
 }
 
 inline ThreadID

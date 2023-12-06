@@ -550,6 +550,8 @@ Execute::issue(ThreadID thread_id)
     const ForwardInstData *insts_in = getInput(thread_id);
     ExecuteThreadInfo &thread = executeInfo[thread_id];
 
+    // uint8_t LVPT_value_exec = inp.outputWire->LVPT;
+    //std::cout << "Value in LVPT: " << insts_in->LVPT_value << std::endl;
     /* Early termination if we have no instructions */
     if (!insts_in)
         return 0;
@@ -1431,6 +1433,9 @@ Execute::evaluate()
 
     BranchData &branch = *out.inputWire;
 
+    branch.pass_fail_LCT = true;
+    branch.new_LVPT_value = 75;
+
     unsigned int num_issued = 0;
 
     /* Do all the cycle-wise activities for dcachePort here to potentially
@@ -1608,6 +1613,8 @@ Execute::evaluate()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    // std::cout << "Value in LVPT: "
+    // << inp.outputWire->LVPT_value << std::endl;
 }
 
 ThreadID

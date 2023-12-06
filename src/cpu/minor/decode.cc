@@ -295,6 +295,9 @@ Decode::evaluate1()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode1 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
 }
 
 void
@@ -468,6 +471,10 @@ Decode::evaluate2()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode2 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -641,6 +648,10 @@ Decode::evaluate3()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode3 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -814,6 +825,10 @@ Decode::evaluate4()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode4 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -987,6 +1002,10 @@ Decode::evaluate5()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode5 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -1160,6 +1179,10 @@ Decode::evaluate6()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode6 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -1333,6 +1356,10 @@ Decode::evaluate7()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode7 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -1506,6 +1533,10 @@ Decode::evaluate8()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode8 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -1679,6 +1710,10 @@ Decode::evaluate9()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode9 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -1852,6 +1887,10 @@ Decode::evaluate10()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode10 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -2025,6 +2064,10 @@ Decode::evaluate11()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode11 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 
@@ -2199,6 +2242,10 @@ Decode::evaluate12()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode12 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -2372,6 +2419,10 @@ Decode::evaluate13()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode13 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -2545,6 +2596,10 @@ Decode::evaluate14()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode14 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -2718,6 +2773,10 @@ Decode::evaluate15()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode15 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 void
@@ -2891,6 +2950,10 @@ Decode::evaluate16()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // std::cout << "Value in LVPT at Decode16 Stage: "
+    // << inp.outputWire->LVPT_value << std::endl;
+
 }
 
 inline ThreadID

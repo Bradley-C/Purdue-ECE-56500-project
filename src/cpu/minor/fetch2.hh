@@ -48,6 +48,7 @@
 #include <vector>
 
 #include "base/named.hh"
+#include "cpu/lvpu/lvpu.hh"
 #include "cpu/minor/buffers.hh"
 #include "cpu/minor/cpu.hh"
 #include "cpu/minor/pipe_data.hh"
@@ -94,6 +95,9 @@ class Fetch2 : public Named
 
     /** Branch predictor passed from Python configuration */
     branch_prediction::BPredUnit &branchPredictor;
+
+    /** Branch predictor passed from Python configuration */
+    load_value_prediction::LVPredUnit &loadValuePredictor;
 
   public:
     /* Public so that Pipeline can pass it to Fetch1 */

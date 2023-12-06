@@ -37,32 +37,29 @@ from m5.proxy import *
 #     lctSize = Param.Unsigned(256, "Size of load classification table")
 #     lctCtrlBits = Param.Unsigned(2, "Bits per counter")
 
-
+'''
 class ConstantVerificationUnit(SimObject):
     type = 'ConstantVerificationUnit'
     cxx_class = 'gem5::load_value_prediction::ConstantVerificationUnit'
     cxx_header = "cpu/lvpu/cvu.hh"
     CVUEntries = Param.Unsigned(1024, "Number of LVPT entries")
     CVUTagSize = Param.Unsigned(32, "Size of the CVU tags, in bits")
-
-class LoadValuePredictionTable(SimObject):
-    type = 'LoadValuePredictionTable'
-    cxx_class = 'gem5::load_value_prediction::LoadValuePredictionTable'
-    cxx_header = "cpu/lvpu/lvpt.hh"
-
-    LVPTEntries = Param.Unsigned(1024, "Number of LVPT entries")
-    LVPTTagSize = Param.Unsigned(22, "Size of the LVPT tags, in bits")
-
+'''
 class LoadValuePredictor(SimObject):
     type = 'LoadValuePredictor'
-    cxx_class = 'gem5::load_value_prediction::LVPUnit'
+    cxx_class = 'gem5::load_value_prediction::LVPredUnit'
     cxx_header = "cpu/lvpu/lvpu.hh"
+    abstract = True
 
     numThreads = Param.Unsigned(Parent.numThreads, "Number of threads")
-    instShiftAmt = Param.Unsigned(2, "Number of bits to shift instructions by")
+    LVPTEntries = Param.Unsigned(1024, "Number of LVPT entries")
+    lctSize = Param.Unsigned(512, "Number of LCT entries")
+    lctBits = Param.Unsigned(2, "Number of bits per LCT entry")
+
+    instShiftAmt = Param.Unsigned(3, "Number of bits to shift instructions by")
     # lct = Param.LoadClassficationTable(LoadClassificationTable(),
     #                                    "Load Classification Table")
-    cvu = Param.ConstantVerificationUnit(ConstantVerificationUnit(),
-                                          "Constant Verification Unit")
-    lvpt = Param.LoadValuePredictionTable(LoadValuePredictionTable(),
-                                          "Load Value Prediction Table")
+    # cvu = Param.ConstantVerificationUnit(ConstantVerificationUnit(),
+    #                                      "Constant Verification Unit")
+    #lvpt = Param.LoadValuePredictionTable(LoadValuePredictionTable(),
+    #                                      "Load Value Prediction Table")

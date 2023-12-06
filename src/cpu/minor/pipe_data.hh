@@ -50,9 +50,10 @@
 #ifndef __CPU_MINOR_PIPE_DATA_HH__
 #define __CPU_MINOR_PIPE_DATA_HH__
 
+#include "cpu/base.hh"
+#include "cpu/lvpu/lvpu.hh"
 #include "cpu/minor/buffers.hh"
 #include "cpu/minor/dyn_inst.hh"
-#include "cpu/base.hh"
 
 namespace gem5
 {
@@ -124,6 +125,10 @@ class BranchData /* : public ReportIF, public BubbleIF */
 
     /** Instruction which caused this branch */
     MinorDynInstPtr inst = MinorDynInst::bubble();
+
+    bool pass_fail_LCT;
+
+    uint64_t new_LVPT_value;
 
   public:
     BranchData() {}
@@ -293,6 +298,23 @@ class ForwardInstData /* : public ReportIF, public BubbleIF */
     /** Thread associated with these instructions */
     ThreadID threadId;
 
+    uint64_t *LVPT_value;
+
+    LVPredUnit::eLoadClass LCT_value;
+
+  public:
+    enum LCT
+    {
+       UnpredictableStrong,
+
+       UnpredictableWeak,
+
+       Predictable,
+
+       Constant
+
+    };
+
   public:
     explicit ForwardInstData(unsigned int width = 0,
                              ThreadID tid = InvalidThreadID);
@@ -317,6 +339,8 @@ class ForwardInstData /* : public ReportIF, public BubbleIF */
 
     /** ReportIF interface */
     void reportData(std::ostream &os) const;
+
+    void set_LVPT();
 };
 
 } // namespace minor

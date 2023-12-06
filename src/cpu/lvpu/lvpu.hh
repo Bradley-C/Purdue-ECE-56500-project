@@ -82,7 +82,7 @@ class LVPredUnit : public SimObject
     } stats;
 
     /** Calculates the local index based on the PC. */
-    inline unsigned getLCTIndex(Addr &load_addr);
+    inline unsigned int getLCTIndex(const Addr load_addr);
 
     /** Size of the load classification table. */
     const unsigned lctSize;
@@ -132,8 +132,7 @@ class LVPredUnit : public SimObject
      * @param corrData The resolved data at the load data address
      * @todo Make this update flexible enough to handle a global predictor.
      */
-    void lctUpdate(const Addr instPC, const bool correct,
-                   const uint64_t corrData);
+    void lctUpdate(const Addr instPC, const bool correct);
 
     /** Number of bits to shift instructions by for predictor addresses. */
     const unsigned instShiftAmt;
@@ -170,10 +169,10 @@ class LVPredUnit : public SimObject
     /**
      *  Returns the predictability of the load given the value of the
      *  LCT entry.
-     *  @param count The value of the counter.
+     *  @param pc The address of the counter.
      *  @return The prediction based on the counter value.
      */
-    inline eLoadClass getLoadClass(ThreadID tid, uint8_t &count);
+    inline eLoadClass getLoadClass(ThreadID tid, Addr pc);
 
     /** Converts the eLoadClass enum to a string and return it. */
     std::string getLoadClassString(eLoadClass loadClass);
@@ -191,7 +190,7 @@ class LVPredUnit : public SimObject
     getPrediction(const StaticInstPtr &inst, const InstSeqNum &loadSeqNum,
                   PCStateBase &pc, uint64_t &data, ThreadID tid);
 
-    typedef LVPUParams Params;
+    typedef LoadValuePredictorParams Params;
     /**
      * @param params The params object, that has the size of the LVPU and LVPT.
      */
@@ -208,7 +207,7 @@ class LVPredUnit : public SimObject
      * @param done_sn The sequence number to commit any older updates up until.
      * @param tid The thread id.
      */
-    void update(const InstSeqNum &done_sn, ThreadID tid);
+    void update(const InstSeqNum &done_sn, uint64_t corrData, ThreadID tid);
 
     void dump();
 
@@ -229,7 +228,7 @@ class LVPredUnit : public SimObject
         PredictorHistory(const PredictorHistory &other) :
             loadSeqNum(other.loadSeqNum), pc(other.pc),
             loadClass(other.loadClass), tid(other.tid), inst(other.inst),
-            data(other.data),
+            data(other.data)
         {}
 
         bool
