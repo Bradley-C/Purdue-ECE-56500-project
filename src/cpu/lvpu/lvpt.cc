@@ -51,21 +51,9 @@ LoadValuePredictionTable::LoadValuePredictionTable(unsigned _numEntries,
         fatal("LVPT entries is not a power of 2!");
     }
 
-    lvpt.resize(numEntries);
-
-    for (unsigned i = 0; i < numEntries; ++i) {
-        lvpt[i].valid = false;
-    }
+    LVPT.resize(numEntries);
 
     idxMask = numEntries - 1;
-}
-
-void
-LoadValuePredictionTable::reset()
-{
-    for (unsigned i = 0; i < numEntries; ++i) {
-        lvpt[i].valid = false;
-    }
 }
 
 inline
@@ -78,50 +66,28 @@ LoadValuePredictionTable::getIndex(Addr instPC, ThreadID tid)
             & idxMask;
 }
 
-bool
-LoadValuePredictionTable::valid(Addr instPC, ThreadID tid)
-{
-    unsigned lvpt_idx = getIndex(instPC, tid);
-
-    assert(lvpt_idx < numEntries);
-
-    if (lvpt[lvpt_idx].valid
-        && lvpt[lvpt_idx].tid == tid) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 // @todo Create some sort of return struct that has both whether or not the
 // value is valid, and also the value.  For now will just use
 // value = 0 to represent invalid entry.
-const uint8_t* *
-LoadValuePredictionTable::lookup(Addr inst_pc, ThreadID tid)
+void
+LoadValuePredictionTable::lookup(Addr inst_pc, ThreadID tid, uint64_t &data)
 {
     unsigned lvpt_idx = getIndex(inst_pc, tid);
 
     assert(lvpt_idx < numEntries);
 
-    if (lvpt[lvpt_idx].valid
-        && lvpt[lvpt_idx].tid == tid) {
-        return &lvpt[lvpt_idx].value.get();
-    } else {
-        return nullptr;
-    }
+    data = LVPT[lvpt_idx].data;
 }
 
 void
-LoadValuePredictionTable::update(Addr inst_pc, const uint8_t *value,
+LoadValuePredictionTable::update(Addr inst_pc, const uint64_t new_data,
                                  ThreadID tid)
 {
     unsigned lvpt_idx = getIndex(inst_pc, tid);
 
     assert(lvpt_idx < numEntries);
 
-    lvpt[lvpt_idx].tid = tid;
-    lvpt[lvpt_idx].valid = true;
-    set(lvpt[lvpt_idx].value, *value);
+    LVPT[lvpt_idx].data = new_data;
 }
 
 } // namespace branch_prediction

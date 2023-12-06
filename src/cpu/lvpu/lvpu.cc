@@ -60,12 +60,29 @@ LVPredUnit::LVPredUnit(const Params &params)
     : SimObject(params),
       numThreads(params.numThreads),
       loadPredHist(numThreads),
-      loadValuePredTable(params.numEntries,
+      LVPT(params.numEntries,
                         params.instShiftAmt,
                         params.numThreads),
       stats(this),
-      instShiftAmt(params.instShiftAmt)
-{}
+      instShiftAmt(params.instShiftAmt),
+      lctSize(params.lctSize),
+      lctBits(params.lctBits),
+      lctSets(lctSize / lctBits),
+      loadClassTable(lctSets, SatCounter8(lctBits)),
+      lctIndexMask(lctSets - 1)
+{
+    if (!isPowerOf2(lctSize)) {
+        fatal("Invalid LCT size.\n");
+    }
+    if (!isPowerOf2(lctSets)) {
+        fatal("Invalid number of LCT sets. Check lctBits.\n");
+    }
+
+    DPRINTF(Fetch, "index mask: %#x\n", lctIndexMask);
+    DPRINTF(Fetch, "LCT size: %i\n", lctSize);
+    DPRINTF(Fetch, "LCT counter bits: %i\n", lctBits);
+    DPRINTF(Fetch, "instruction shift amount: %i\n", instShiftAmt);
+}
 
 LVPredUnit::LVPredUnitStats::LVPredUnitStats(statistics::Group *parent)
     : statistics::Group(parent),
@@ -101,6 +118,42 @@ LVPredUnit::drainSanityCheck() const
         assert(ph.empty());
 }
 
+bool
+LVPredUnit::getPrediction(const StaticInstPtr &inst,
+                          const InstSeqNum &loadSeqNum,
+                          PCStateBase &pc, LVPResult &result, ThreadID tid)
+{
+    ++stats.lvpuLookups;
+    ppLoads->notify(1);
+
+    // Get the load classification and the current value in the LVPT.
+    LoadClass loadClass = getLoadClass(tid, pc.instAddr(), load_history);
+    result.loadClass = loadClass;
+    result.data = lvptLookup(pc.instAddr());
+    bool predictable = (loadClass == Predictable) || (loadClass == Constant);
+    if (predictable) ++stats.predicted;
+
+    DPRINTF(Load, "[tid:%i] [sn:%llu] "
+            "Load predictor predicted %i for PC %s\n",
+            tid, loadSeqNum, predictable, pc);
+
+    // append a record to the load prediction history table
+    DPRINTF(Load,
+            "[tid:%i] [sn:%llu] Creating prediction history for PC %s\n",
+            tid, loadSeqNum, pc);
+    PredictorHistory load_predict_record(loadSeqNum, pc.instAddr(),
+                                         predictable, loadClass,
+                                         tid, inst, result.data);
+    loadPredHist[tid].push_front(load_predict_record);
+
+    DPRINTF(Load,
+            "[tid:%i] [sn:%llu] History entry added. "
+            "loadPredHist.size(): %i\n",
+            tid, loadSeqNum, loadPredHist[tid].size());
+
+    return predictable;
+}
+
 void
 LVPredUnit::update(const InstSeqNum &done_sn, ThreadID tid)
 {
@@ -110,150 +163,73 @@ LVPredUnit::update(const InstSeqNum &done_sn, ThreadID tid)
     while (!loadPredHist[tid].empty() &&
            loadPredHist[tid].back().loadSeqNum <= done_sn) {
         // Update the load value predictor with the correct results.
-        lctUpdate(tid, loadPredHist[tid].back().pc,
+        lctUpdate(loadPredHist[tid].back().pc,
                     loadPredHist[tid].back().correct,
-                    false,
-                    loadPredHist[tid].back().inst,
                     loadPredHist[tid].back().data);
-
+        LVPT.update(loadPredHist[tid].back().pc,
+                    loadPredHist[tid].back().data,
+                    tid)
         loadPredHist[tid].pop_back();
     }
 }
 
 void
-LVPredUnit::squash(const InstSeqNum &squashed_sn, ThreadID tid)
+LVPredUnit::lctUpdate(const Addr load_addr, const bool correct,
+                      const uint64_t &corrData)
 {
-    History &load_pred_hist = loadPredHist[tid];
-
-    while (!load_pred_hist.empty() &&
-           load_pred_hist.front().loadSeqNum > squashed_sn) {
-
-        DPRINTF(Load, "[tid:%i] [squash sn:%llu] "
-                "Removing history for [sn:%llu] "
-                "PC %#x\n", tid, squashed_sn,
-                load_pred_hist.front().loadSeqNum,
-                load_pred_hist.front().pc);
-
-        load_pred_hist.pop_front();
-
-        DPRINTF(Load, "[tid:%i] [squash sn:%llu] loadPredHist.size(): %i\n",
-                tid, squashed_sn, loadPredHist[tid].size());
-    }
-}
-
-void
-LVPredUnit::squash(const InstSeqNum &squashed_sn,
-                  const uint64_t &corr_data, ThreadID tid)
-{
-    // Now that we know that a load was mispredicted, we need to undo
-    // all the loads that have been seen up until this load and
-    // fix up everything.
-    // NOTE: This should be call conceivably in only 1 scenario:
-    //  After a load is executed, it updates its status in the ROB in the
-    //  commit stage then checks the ROB update and sends a signal to
-    //  the fetch stage to squash the history after the mispredict.
-
-    History &load_pred_hist = loadPredHist[tid];
-
-    ++stats.predictedIncorrect;
-    ppMisses->notify(1);
-
-    DPRINTF(Load, "[tid:%i] Squashing from sequence number %i, "
-            "setting data to %s\n", tid, squashed_sn, corr_data);
-
-    // Squash All Branches AFTER this mispredicted branch
-    squash(squashed_sn, tid);
-
-    // If there's a squash due to a syscall, there may not be an entry
-    // corresponding to the squash.  In that case, don't bother trying to
-    // fix up the entry.
-    if (!load_pred_hist.empty()) {
-
-        auto hist_it = load_pred_hist.begin();
-        //HistoryIt hist_it = find(load_pred_hist.begin(),
-        //                        load_pred_hist.end(),
-        //                        squashed_sn);
-
-        //assert(hist_it != load_pred_hist.end());
-        if (load_pred_hist.front().loadSeqNum != squashed_sn) {
-            DPRINTF(Load, "Front sn %i != Squash sn %i\n",
-                    load_pred_hist.front().loadSeqNum, squashed_sn);
-
-            assert(load_pred_hist.front().loadSeqNum == squashed_sn);
-        }
-
-        // There are separate functions for in-order and out-of-order
-        // branch prediction, but not for update. Therefore, this
-        // call should take into account that the mispredicted branch may
-        // be on the wrong path (i.e., OoO execution), and that the counter
-        // table(s) should not be updated. Thus, this call should restore the
-        // state of the underlying predictor, for instance the local/global
-        // histories. The counter tables will be updated when the branch
-        // actually commits.
-
-        // Remember the correct direction for the update at commit.
-        load_pred_hist.front().predTaken = actually_taken;
-        load_pred_hist.front().target = corr_target.instAddr();
-
-        lctUpdate(tid, (*hist_it).pc, correct, true,
-               load_pred_hist.front().inst,
-               corr_data);
-
-        if (!correct) {
-            DPRINTF(Load,"[tid:%i] [squash sn:%llu] "
-                    "LVPT Update called for [sn:%llu] "
-                    "PC %#x\n", tid, squashed_sn,
-                    hist_it->loadSeqNum, hist_it->pc);
-
-            LVPT.update(hist_it->pc, corr_data, tid);
-        } else {
-           // prediction was incorrect
-        }
-    } else {
-        DPRINTF(Load, "[tid:%i] [sn:%llu] load_pred_hist empty, can't "
-                "update\n", tid, squashed_sn);
-    }
-}
-
-void
-LVPredUnit::lctUpdate(ThreadID tid, Addr load_addr, bool correct,
-                bool squashed, const StaticInstPtr &inst, uint8_t *corrData)
-{
-    unsigned local_predictor_idx;
-
-    // No state to restore, and we do not update on the wrong
-    // path.
-    if (squashed) {
-        return;
-    }
+    unsigned lctIndex;
 
     // Update the local predictor.
-    local_predictor_idx = getLCTIndex(load_addr);
+    lctIndex = getLCTIndex(load_addr);
 
-    DPRINTF(Fetch, "Looking up index %#x\n", local_predictor_idx);
+    DPRINTF(Fetch, "Looking up index %#x\n", lctIndex);
 
     if (correct) {
         DPRINTF(Fetch, "LCT entry incremented.\n");
-        loadClassTable[local_predictor_idx]++;
+        loadClassTable[lctIndex]++;
     } else {
         DPRINTF(Fetch, "LCT entry decremented.\n");
-        loadClassTable[local_predictor_idx]--;
+        loadClassTable[lctIndex]--;
     }
 }
 
-inline
+
 LVPredUnit::LoadClass
 LVPredUnit::getLoadClass(uint8_t &count)
 {
     switch(count) {
-      case 0:
-        return LoadClass::UnpredictableStrong;
-      case 1:
-        return LoadClass::UnpredictableWeak;
-      case 2:
-        return LoadClass::Predictable;
-      default:
-        return LoadClass::Constant;
+        case 0:
+            return LoadClass::UnpredictableStrong;
+        case 1:
+            return LoadClass::UnpredictableWeak;
+        case 2:
+            return LoadClass::Predictable;
+        default:
+            return LoadClass::Constant;
+    }
+}
+
+std::string
+getLoadClassString(LoadClass loadClass)
+{
+    std::string loadClassString;
+    switch(loadClass) {
+        case UnpredictableStrong:
+            loadClassString = "UnpredictableStrong";
+            return loadClassString;
+        case UnpredictableWeak:
+            loadClassString = "UnpredictableWeak";
+            return loadClassString;
+        case Predictable:
+            loadClassString = "Predictable";
+            return loadClassString;
+        case Constant:
+            loadClassString = "Constant";
+            return loadClassString;
+        default:
+            DPRINTF(LVPU, "Invalid load class: %d. Values must use LoadClass
+                    enumeration. Returning null terminator.", loadClass);
+            return "\0";
     }
 }
 
@@ -261,7 +237,7 @@ inline
 unsigned
 LVPredUnit::getLCTIndex(Addr &load_addr)
 {
-    return (load_addr >> instShiftAmt) & indexMask;
+    return (load_addr >> instShiftAmt) & lctIndexMask;
 }
 
 void
@@ -288,5 +264,5 @@ LVPredUnit::dump()
     }
 }
 
-} // namespace branch_prediction
+} // namespace load_value_prediction
 } // namespace gem5
