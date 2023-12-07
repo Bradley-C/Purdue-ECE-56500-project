@@ -502,6 +502,9 @@ Fetch2::evaluate()
                     dyn_inst->minorTraceInst(*this,
                             cpu.threads[0]->getIsaPtr()->regClasses());
                 }
+                insts_out.LCT_value = loadValuePredictor.getPrediction(
+                    dyn_inst->staticInst, dyn_inst->id.fetchSeqNum ,
+                    *dyn_inst->pc, insts_out.LVPT_value, tid);
             }
 
             /* Remember the streamSeqNum of this line so we can tell when
@@ -569,9 +572,7 @@ Fetch2::evaluate()
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->id.threadId].pushTail();
 
-    insts_out.LCT_value = loadValuePredictor.getPrediction(
-        dyn_inst->staticInst,dyn_inst->fetchSeqNum ,*dyn_inst->pc,
-        insts_out.LVPT_value, tid);
+
 
 }
 

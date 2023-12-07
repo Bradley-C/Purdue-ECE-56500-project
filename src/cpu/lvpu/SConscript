@@ -32,7 +32,6 @@ if env['CONF']['TARGET_ISA'] == 'null':
     Return()
 
 SimObject('LoadValuePredictor.py', sim_objects=[
-    'LoadValuePredictionTable',
     'LoadValuePredictor'])
 
 #Source('cvu.cc') 'ConstantVerificationUnit',

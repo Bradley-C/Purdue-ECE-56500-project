@@ -298,9 +298,9 @@ class ForwardInstData /* : public ReportIF, public BubbleIF */
     /** Thread associated with these instructions */
     ThreadID threadId;
 
-    uint64_t *LVPT_value;
+    uint64_t LVPT_value;
 
-    LVPredUnit::eLoadClass LCT_value;
+    load_value_prediction::LVPredUnit::eLoadClass LCT_value;
 
   public:
     enum LCT

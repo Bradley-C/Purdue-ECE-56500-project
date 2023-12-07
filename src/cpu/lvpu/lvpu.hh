@@ -51,7 +51,7 @@
 #include "cpu/lvpu/cvu.hh"
 #include "cpu/lvpu/lvpt.hh"
 #include "cpu/static_inst.hh"
-// #include "params/LoadValuePredictor.hh"
+#include "params/LoadValuePredictor.hh"
 #include "sim/probe/pmu.hh"
 #include "sim/sim_object.hh"
 
