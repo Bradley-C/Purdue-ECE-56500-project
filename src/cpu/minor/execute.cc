@@ -80,6 +80,9 @@ Execute::Execute(const std::string &name_,
     setTraceTimeOnCommit(params.executeSetTraceTimeOnCommit),
     setTraceTimeOnIssue(params.executeSetTraceTimeOnIssue),
     allowEarlyMemIssue(params.executeAllowEarlyMemoryIssue),
+
+    constantValueUnit(*params.constantVU),
+
     noCostFUIndex(fuDescriptions.funcUnits.size() + 1),
     lsq(name_ + ".lsq", name_ + ".dcache_port",
         cpu_, *this,
@@ -1146,7 +1149,7 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
 
             DPRINTF(MinorExecute, "Trying to commit mem response: %s\n",
                 *inst);
-
+            completed_inst = true;
             /* Complete or discard the response */
             if (discard_inst) {
                 DPRINTF(MinorExecute, "Discarding mem inst: %s as its"
@@ -1155,12 +1158,68 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
 
                 lsq.popResponse(mem_response);
             } else {
+
                 handleMemResponse(inst, mem_response, branch, fault);
+                bool is_store = inst->staticInst->isStore();
+                bool is_load = inst->staticInst->isLoad();
+                completed_inst = true;
+                issued_mem_ref = true;
+                if (is_store){
+
+    load_value_prediction::ConstantVerificationUnit::CVUReturn
+    cvuResult;
+    cvuResult = constantValueUnit.storeClear(*inst->pc,
+    (uint64_t) inst->traceData->getAddr(),
+    inst->traceData->getIntData(),thread_id);
+                    if (cvuResult.clear){
+                        out.inputWire->pass_fail_LCT = false;
+                        out.inputWire->new_LVPT_value = cvuResult.value;
+                    }
+                }
+                //Check if LVPT matches mem access
+                else if (is_load) {
+                    out.inputWire->pass_fail_LCT = false;
+
+                    if ((int)inp.outputWire->LCT_value==3){
+
+load_value_prediction::ConstantVerificationUnit::CVUReturn
+cvuResult;
+cvuResult = constantValueUnit.addrMatch(*inst->pc,
+(uint64_t)inst->traceData->getAddr(), thread_id);
+
+                        if (!cvuResult.clear){
+                            issued_mem_ref=false;
+                            completed_inst = false;
+                            lsq.popResponse(mem_response);
+                            out.inputWire->pass_fail_LCT = true;
+                        }
+                        else{
+                        out.inputWire->new_LVPT_value = cvuResult.value;
+constantValueUnit.updateEntry(*inst->pc,
+inst->traceData->getIntData(),thread_id);
+                        }
+
+                    }
+                    else{
+if (inst->traceData->getIntData() == inp.outputWire->LVPT_value)
+                        {
+                            out.inputWire->pass_fail_LCT = true;
+                            if ((int)inp.outputWire->LCT_value==2){
+constantValueUnit.updateEntry(*inst->pc,
+inp.outputWire->LVPT_value,thread_id);
+                            }
+                        }
+                        else{
+    out.inputWire->new_LVPT_value = inst->traceData->getIntData();
+                        }
+
+                    }
+
+                }
                 committed_inst = true;
             }
 
             completed_mem_ref = true;
-            completed_inst = true;
         } else if (can_commit_insts) {
             /* If true, this instruction will, subject to timing tweaks,
              *  be considered for completion.  try_to_commit flattens

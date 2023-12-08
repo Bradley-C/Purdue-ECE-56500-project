@@ -502,9 +502,12 @@ Fetch2::evaluate()
                     dyn_inst->minorTraceInst(*this,
                             cpu.threads[0]->getIsaPtr()->regClasses());
                 }
-                insts_out.LCT_value = loadValuePredictor.getPrediction(
-                    dyn_inst->staticInst, dyn_inst->id.fetchSeqNum ,
-                    *dyn_inst->pc, insts_out.LVPT_value, tid);
+                bool is_load = dyn_inst->staticInst->isLoad();
+                if (is_load){
+                    insts_out.LCT_value = loadValuePredictor.getPrediction(
+                        dyn_inst->staticInst, dyn_inst->id.fetchSeqNum ,
+                        *dyn_inst->pc, insts_out.LVPT_value, tid);
+                }
             }
 
             /* Remember the streamSeqNum of this line so we can tell when

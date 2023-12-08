@@ -291,6 +291,10 @@ class BaseMinorCPU(BaseCPU):
     loadValuePred = Param.LoadValuePredictor(LoadValuePredictor(
         numThreads = Parent.numThreads), "Load Value Predictor")
 
+    constantVU = Param.ConstantVerificationUnit(ConstantVerificationUnit(
+        numThreads = Parent.numThreads), "Constant Verification Unit")
+
+
     def addCheckerCpu(self):
         print("Checker not yet supported by MinorCPU")
         exit(1)

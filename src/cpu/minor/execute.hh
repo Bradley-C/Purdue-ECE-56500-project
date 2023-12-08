@@ -49,6 +49,7 @@
 
 #include "base/named.hh"
 #include "base/types.hh"
+#include "cpu/lvpu/cvu2.hh"
 #include "cpu/minor/buffers.hh"
 #include "cpu/minor/cpu.hh"
 #include "cpu/minor/func_unit.hh"
@@ -149,6 +150,8 @@ class Execute : public Named
         DrainHaltFetch, /* Halting Fetch after completing current inst */
         DrainAllInsts /* Discarding all remaining insts */
     };
+
+    load_value_prediction::ConstantVerificationUnit &constantValueUnit;
 
     struct ExecuteThreadInfo
     {
