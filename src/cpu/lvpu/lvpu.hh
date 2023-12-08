@@ -48,7 +48,6 @@
 #include "base/statistics.hh"
 #include "base/types.hh"
 #include "cpu/inst_seq.hh"
-#include "cpu/lvpu/cvu.hh"
 #include "cpu/lvpu/lvpt.hh"
 #include "cpu/static_inst.hh"
 #include "params/LoadValuePredictor.hh"
@@ -202,12 +201,20 @@ class LVPredUnit : public SimObject
     void drainSanityCheck() const;
 
     /**
-     * Tells the load value predictor to commit any updates until the given
+     * Tells the branch predictor to commit any updates until the given
      * sequence number.
      * @param done_sn The sequence number to commit any older updates up until.
      * @param tid The thread id.
      */
     void update(const InstSeqNum &done_sn, uint64_t corrData, ThreadID tid);
+
+    /**
+     * Squashes all outstanding updates until a given sequence number.
+     * @param squashed_sn The sequence number to squash any younger updates up
+     * until.
+     * @param tid The thread id.
+     */
+    void squash(const InstSeqNum &squashed_sn, ThreadID tid);
 
     void dump();
 
