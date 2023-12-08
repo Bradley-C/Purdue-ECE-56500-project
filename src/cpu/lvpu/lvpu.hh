@@ -43,7 +43,6 @@
 #define __CPU_LVPU_LVP_UNIT_HH__
 
 #include <deque>
-
 #include "base/sat_counter.hh"
 #include "base/statistics.hh"
 #include "base/types.hh"

@@ -138,7 +138,8 @@ ConstantVerificationUnit::checkValid(Addr instPC, ThreadID tid)
 
     assert(cvu_idx < numEntries);
     for (unsigned j = 0; j < numAddrperEntry; j++) {
-        if (!cvu[cvu_idx][j].valid || (!cvu[cvu_idx][j].tid == tid)) {
+        if (!cvu[cvu_idx][j].valid ||
+        (!cvu[cvu_idx][j].tid == tid)) {
             return false;
         }
     }
@@ -146,11 +147,8 @@ ConstantVerificationUnit::checkValid(Addr instPC, ThreadID tid)
 }
 
 void
-ConstantVerificationUnit::updateEntry(const StaticInstPtr &inst,
-                                      const InstSeqNum &seqNum,
-                                      PCStateBase &pc,
-                                      uint64_t new_value,
-                                      ThreadID tid)
+ConstantVerificationUnit::updateEntry(PCStateBase &pc,
+uint64_t new_value, ThreadID tid)
 {
     unsigned cvu_idx = getIndexCVU( pc.instAddr(), tid);
 
@@ -162,27 +160,30 @@ ConstantVerificationUnit::updateEntry(const StaticInstPtr &inst,
         cvu[cvu_idx][j].value = new_value;
     }
 
-    PredictorHistory cvu_record(seqNum, pc.instAddr(), cvu, tid,
-    inst, new_value);
-    predHist[tid].push_front(cvu_record);
+   // PredictorHistory cvu_record(seqNum, pc.instAddr(), cvu, tid,
+  //  inst, new_value);
+   //predHist[tid].push_front(cvu_record);
 }
 
 ConstantVerificationUnit::CVUReturn
-ConstantVerificationUnit::storeClear(Addr inst_pc,
+ConstantVerificationUnit::storeClear(PCStateBase &inst_pc,
  uint64_t store_addr, uint64_t new_value, ThreadID tid){
     CVUReturn return_data;
-    unsigned cvu_idx = getIndexCVU(inst_pc, tid);
+    unsigned cvu_idx = getIndexCVU(inst_pc.instAddr(), tid);
     assert(cvu_idx < numEntries);
     ++stats.cvuStoreLookups;
 
-    return_data = (CVUReturn){.pc=inst_pc, .value=cvu[cvu_idx][0].value,
+    return_data = (CVUReturn){.pc=inst_pc.instAddr(),
+    .value=cvu[cvu_idx][0].value,
     .clear=false};
     for (unsigned i = 0; i < numEntries; i++) {
         for (unsigned j = 0; j < numAddrperEntry; j++) {
             if (cvu[i][j].value == store_addr){
-                // Figure out how to pass value being stored to here as
+                // Figure out how to pass value being stored
+                //to here as
                 // well
-                return_data = (CVUReturn){.pc=inst_pc, .value=new_value,
+                return_data = (CVUReturn)
+                {.pc=inst_pc.instAddr(), .value=new_value,
                 .clear=true};
                 ++stats.loadMatched;
             }
@@ -195,21 +196,21 @@ ConstantVerificationUnit::storeClear(Addr inst_pc,
 }
 
 ConstantVerificationUnit::CVUReturn
-ConstantVerificationUnit::addrMatch(Addr inst_pc, uint64_t data_addr,
+ConstantVerificationUnit::addrMatch(PCStateBase& inst_pc, uint64_t data_addr,
 ThreadID tid) {
-    unsigned cvu_idx = getIndexCVU(inst_pc, tid);
+    unsigned cvu_idx = getIndexCVU(inst_pc.instAddr(), tid);
 
     assert(cvu_idx < numEntries);
     ++stats.cvuLoadLookups;
 
     CVUReturn return_data;
-    return_data = (CVUReturn){.pc=inst_pc, .value=data_addr,
+    return_data = (CVUReturn){.pc=inst_pc.instAddr(), .value=data_addr,
     .clear=true};
     for (unsigned j = 0; j < numAddrperEntry; j++) {
         if (cvu[cvu_idx][j].value == data_addr){
             // Figure out how to pass value being stored to here as
             // well
-            return_data = (CVUReturn){.pc=inst_pc, .value=data_addr,
+            return_data = (CVUReturn){.pc=inst_pc.instAddr(), .value=data_addr,
             .clear=false};
         }
     }

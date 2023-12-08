@@ -39,8 +39,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __CPU_LVPU_LVP_UNIT_HH__
-#define __CPU_LVPU_LVP_UNIT_HH__
+#ifndef __CPU_LVPU_CVU_UNIT_HH__
+#define __CPU_LVPU_CVU_UNIT_HH__
 
 
 #include <deque>
@@ -121,49 +121,6 @@ class ConstantVerificationUnit : public SimObject
 
   protected:
 
-    struct CVUReturn
-    {
-        /** The entry's index to clear */
-        Addr pc;
-
-        /** The entry's value to replace old*/
-        uint64_t value;
-
-        /** Whether or not the replacement is valid. */
-        bool clear = false;
-    };
-
-    /** Updates the CVU an entry with a new addr when new constant
-     * found
-     *  @param inst_pc The PC address of the load being updated.
-     *  @param new_value The address that was loaded.
-     *  @param tid The thread id.
-     */
-    void updateEntry(const StaticInstPtr &inst,
-    const InstSeqNum &loadSeqNum, PCStateBase &pc,
-    uint64_t new_value, ThreadID tid);
-
-    /** Clears the CVU of valid entry when data addr matches a given
-     *  entry for stores
-     *  @param inst_pc The PC address of the store being updated.
-     *  @param data_addr The address that is stored to.
-     *  @param new_addr The value that was stored.
-     *  @param tid The thread id.
-     *  @return CVUReturn that tells the LVPT/LCT how to update
-     */
-    ConstantVerificationUnit::CVUReturn storeClear(Addr inst_pc,
-    uint64_t data_addr,
-                      uint64_t new_addr, ThreadID tid);
-
-    /** Do CAM search for given PC and Load Addr, used to pass cache
-     *  for loads
-     *  @param inst_pc The PC address of the store being updated.
-     *  @param data_addr The address that is being loaded.
-     *  @param tid The thread id.
-     *  @return CVUReturn that tells the LVPT/LCT how to update
-     */
-    ConstantVerificationUnit::CVUReturn addrMatch(Addr inst_pc,
-    uint64_t data_addr, ThreadID tid);
 
     /** Do CAM search for given PC and Load Addr, used to pass cache for loads
      *  @param inst_pc The PC address of the store being updated.
@@ -199,6 +156,48 @@ class ConstantVerificationUnit : public SimObject
      * @param params The params object, that has the size of the LVPU and LVPT.
      */
     ConstantVerificationUnit(const Params &p);
+
+    struct CVUReturn
+    {
+        /** The entry's index to clear */
+        Addr pc;
+
+        /** The entry's value to replace old*/
+        uint64_t value;
+
+        /** Whether or not the replacement is valid. */
+        bool clear = false;
+    };
+
+    /** Updates the CVU an entry with a new addr when new constant
+     * found
+     *  @param inst_pc The PC address of the load being updated.
+     *  @param new_value The address that was loaded.
+     *  @param tid The thread id.
+     */
+    void updateEntry( PCStateBase &pc,
+    uint64_t new_value, ThreadID tid);
+
+    /** Clears the CVU of valid entry when data addr matches a given
+     *  entry for stores
+     *  @param inst_pc The PC address of the store being updated.
+     *  @param data_addr The address that is stored to.
+     *  @param new_addr The value that was stored.
+     *  @param tid The thread id.
+     *  @return CVUReturn that tells the LVPT/LCT how to update
+     */
+    ConstantVerificationUnit::CVUReturn storeClear(PCStateBase &inst_pc,
+    uint64_t data_addr, uint64_t new_addr, ThreadID tid);
+
+    /** Do CAM search for given PC and Load Addr, used to pass cache
+     *  for loads
+     *  @param inst_pc The PC address of the store being updated.
+     *  @param data_addr The address that is being loaded.
+     *  @param tid The thread id.
+     *  @return CVUReturn that tells the LVPT/LCT how to update
+     */
+    ConstantVerificationUnit::CVUReturn addrMatch(PCStateBase &inst_pc,
+    uint64_t data_addr, ThreadID tid);
 
     /**
      * Tells the CVU to commit any updates until the given
@@ -287,4 +286,4 @@ class ConstantVerificationUnit : public SimObject
 } // namespace load_value_prediction
 } // namespace gem5
 
-#endif // __CPU_LVPU_LVP_UNIT_HH__
+#endif // __CPU_LVPU_CVU_UNIT_HH__

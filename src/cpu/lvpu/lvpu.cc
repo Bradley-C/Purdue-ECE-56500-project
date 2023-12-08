@@ -43,7 +43,6 @@
 #include "cpu/lvpu/lvpu.hh"
 
 #include <algorithm>
-
 #include "arch/generic/pcstate.hh"
 #include "base/compiler.hh"
 #include "base/trace.hh"
