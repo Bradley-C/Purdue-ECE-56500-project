@@ -246,9 +246,9 @@ for i in range(np):
         bpClass = ObjectList.bp_list.get(args.bp_type)
         system.cpu[i].branchPred = bpClass()
 
-    if args.lvp_type:
-        lvpClass = ObjectList.lvp_list.get(args.lvp_type)
-        system.cpu[i].loadValuePred = lvpClass()
+    ##if args.lvp_type:
+        ##lvpClass = ObjectList.lvp_list.get(args.lvp_type)
+        ##system.cpu[i].loadValuePred = lvpClass()
 
     if args.indirect_bp_type:
         indirectBPClass = \

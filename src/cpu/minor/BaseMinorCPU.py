@@ -283,16 +283,14 @@ class BaseMinorCPU(BaseCPU):
         " the in flight insts queue")
 
     enableIdling = Param.Bool(True,
-        "Enable cycle skipping when the processor is idle\n");
+        "Enable cycle skipping when the processor is idle\n")
 
     branchPred = Param.BranchPredictor(TournamentBP(
         numThreads = Parent.numThreads), "Branch Predictor")
 
-    loadValuePred = Param.LoadValuePredictor(LoadValuePredictor(
-        numThreads = Parent.numThreads), "Load Value Predictor")
+    loadValuePred = Param.LoadValuePredictor("Load Value Predictor")
 
-    constantVU = Param.ConstantVerificationUnit(ConstantVerificationUnit(
-        numThreads = Parent.numThreads), "Constant Verification Unit")
+    constantVU = Param.ConstantVerificationUnit("Constant Verification Table")
 
 
     def addCheckerCpu(self):

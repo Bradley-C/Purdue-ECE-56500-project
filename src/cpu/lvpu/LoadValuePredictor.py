@@ -37,17 +37,6 @@ from m5.proxy import *
 #     lctSize = Param.Unsigned(256, "Size of load classification table")
 #     lctCtrlBits = Param.Unsigned(2, "Bits per counter")
 
-
-class ConstantVerificationUnit(SimObject):
-    type = 'ConstantVerificationUnit'
-    cxx_class = 'gem5::load_value_prediction::ConstantVerificationUnit'
-    cxx_header = "cpu/lvpu/cvu2.hh"
-    numThreads = Param.Unsigned(Parent.numThreads, "Number of threads")
-    CVUEntries = Param.Unsigned(1024, "Number of LVPT entries")
-    numAddrHold = Param.Unsigned(1, "Number of data address per entry")
-    CVUTagSize = Param.Unsigned(32, "Size of the CVU tags, in bits")
-    instShiftAmt = Param.Unsigned(64-10, "Number of bits to shift ints by")
-
 class LoadValuePredictor(SimObject):
     type = 'LoadValuePredictor'
     cxx_class = 'gem5::load_value_prediction::LVPredUnit'
@@ -66,3 +55,13 @@ class LoadValuePredictor(SimObject):
     #                                      "Constant Verification Unit")
     #lvpt = Param.LoadValuePredictionTable(LoadValuePredictionTable(),
     #                                      "Load Value Prediction Table")
+
+class ConstantVerificationUnit(SimObject):
+    type = 'ConstantVerificationUnit'
+    cxx_class = 'gem5::load_value_prediction::ConstantVerificationUnit'
+    cxx_header = "cpu/lvpu/cvu2.hh"
+    numThreads = Param.Unsigned(Parent.numThreads, "Number of threads")
+    CVUEntries = Param.Unsigned(1024, "Number of LVPT entries")
+    numAddrHold = Param.Unsigned(1, "Number of data address per entry")
+    CVUTagSize = Param.Unsigned(32, "Size of the CVU tags, in bits")
+    instShiftAmt = Param.Unsigned(64-10, "Number of bits to shift ints by")
