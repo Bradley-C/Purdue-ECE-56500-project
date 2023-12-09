@@ -290,7 +290,7 @@ class BaseMinorCPU(BaseCPU):
 
     loadValuePred = Param.LoadValuePredictor("Load Value Predictor")
 
-    constantVU = Param.ConstantVerificationUnit("Constant Verification Table")
+    #constantVU = Param.ConstantVerificationUnit("Constant Verification Table")
 
 
     def addCheckerCpu(self):

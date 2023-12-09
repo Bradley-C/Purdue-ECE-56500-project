@@ -81,7 +81,7 @@ Execute::Execute(const std::string &name_,
     setTraceTimeOnIssue(params.executeSetTraceTimeOnIssue),
     allowEarlyMemIssue(params.executeAllowEarlyMemoryIssue),
 
-    constantValueUnit(*params.constantVU),
+    //constantValueUnit(*params.constantVU),
 
     noCostFUIndex(fuDescriptions.funcUnits.size() + 1),
     lsq(name_ + ".lsq", name_ + ".dcache_port",
@@ -1160,12 +1160,12 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
             } else {
 
                 handleMemResponse(inst, mem_response, branch, fault);
-                bool is_store = inst->staticInst->isStore();
-                bool is_load = inst->staticInst->isLoad();
+                //bool is_store = inst->staticInst->isStore();
+                //bool is_load = inst->staticInst->isLoad();
                 completed_inst = true;
-                issued_mem_ref = true;
-                if (is_store){
-
+                //issued_mem_ref = true;
+                //if (is_store){
+/*
     load_value_prediction::ConstantVerificationUnit::CVUReturn
     cvuResult;
     cvuResult = constantValueUnit.storeClear(*inst->pc,
@@ -1216,7 +1216,7 @@ inp.outputWire->LVPT_value,thread_id);
                     }
 
                 }
-                committed_inst = true;
+                committed_inst = true;*/
             }
 
             completed_mem_ref = true;

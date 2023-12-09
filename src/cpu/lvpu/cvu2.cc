@@ -219,10 +219,13 @@ ThreadID tid) {
  }
 
 void
-ConstantVerificationUnit::update(const InstSeqNum &done_sn, ThreadID tid)
+ConstantVerificationUnit::update(const InstSeqNum &done_sn, uint64_t new_value,
+ ThreadID tid)
 {
     while (!predHist[tid].empty() && predHist[tid].back().seqNum <= done_sn) {
 
+        updateEntry(PredHist[tid].back().pc, new_value ,tid);
+        CVU.update(PredHist[tid].back().pc, new_value, tid);
         predHist[tid].pop_back();
     }
 }

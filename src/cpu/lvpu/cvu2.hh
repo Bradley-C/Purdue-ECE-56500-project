@@ -205,7 +205,7 @@ class ConstantVerificationUnit : public SimObject
      * @param done_sn The sequence number to commit any older updates up until.
      * @param tid The thread id.
      */
-    void update(const InstSeqNum &done_sn, ThreadID tid);
+    void update(const InstSeqNum &done_sn, uint64_t new_value, ThreadID tid);
 
     /**
      * Squashes all outstanding updates until a given sequence number.

@@ -32,9 +32,9 @@ if env['CONF']['TARGET_ISA'] == 'null':
     Return()
 
 SimObject('LoadValuePredictor.py', sim_objects=[
-    'LoadValuePredictor', 'ConstantVerificationUnit'])
+    'LoadValuePredictor']) # , 'ConstantVerificationUnit'
 
 Source('lvpt.cc')
 Source('lvpu.cc')
-Source('cvu2.cc')
+# Source('cvu2.cc')
 
