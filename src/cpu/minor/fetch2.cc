@@ -75,7 +75,7 @@ Fetch2::Fetch2(const std::string &name,
     outputWidth(params.decodeInputWidth),
     processMoreThanOneInput(params.fetch2CycleInput),
     branchPredictor(*params.branchPred),
-    loadValuePredictor(*params.loadValuePred),
+    lVPred(*params.loadValuePred),
     fetchInfo(params.numThreads),
     threadPriority(0), stats(&cpu_)
 {
@@ -253,10 +253,10 @@ Fetch2::evaluate()
     //insts_out.LVPT_value = 55;
     //}
 
-    std::cout << "Pass or Fail in LCT: "
-    << branch_inp.pass_fail_LCT << std::endl;
-    std::cout << "New Value in LVPT: "
-    << branch_inp.new_LVPT_value << std::endl;
+  //  std::cout << "Pass or Fail in LCT: "
+  //  << branch_inp.pass_fail_LCT << std::endl;
+  //  std::cout << "New Value in LVPT: "
+  //  << branch_inp.new_LVPT_value << std::endl;
 
     assert(insts_out.isBubble());
 
@@ -504,7 +504,7 @@ Fetch2::evaluate()
                 }
                 bool is_load = dyn_inst->staticInst->isLoad();
                 if (is_load){
-                    insts_out.LCT_value = loadValuePredictor.getPrediction(
+                    insts_out.LCT_value = lVPred.getPrediction(
                         dyn_inst->staticInst, dyn_inst->id.fetchSeqNum ,
                         *dyn_inst->pc, insts_out.LVPT_value, tid);
                 }

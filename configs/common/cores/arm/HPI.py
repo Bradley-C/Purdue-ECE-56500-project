@@ -1345,6 +1345,13 @@ class HPI_BP(TournamentBP):
     RASSize = 8
     instShiftAmt = 2
 
+class HPI_LVPU(LoadValuePredictor):
+    LVPTEntries = 1024
+    lctSize = 512
+    lctBits = 2
+    instShiftAmt = 3
+
+
 class HPI_ICache(Cache):
     data_latency = 1
     tag_latency = 1
@@ -1427,11 +1434,12 @@ class HPI(ArmMinorCPU):
     enableIdling = True
 
     branchPred = HPI_BP()
+    loadValuePred = HPI_LVPU()
 
     mmu = HPI_MMU()
 
 __all__ = [
-    "HPI_BP",
+    "HPI_BP", "HPI_LVPU",
     "HPI_ITB", "HPI_DTB",
     "HPI_ICache", "HPI_DCache", "HPI_L2",
     "HPI",

@@ -114,9 +114,12 @@ class ArmPMU(SimObject):
         """
 
         bpred = getattr(cpu, "branchPred", None) if cpu else None
+        lvpunit = getattr(cpu, "loadValuePred", None) if cpu else None
+
         if bpred is not None and isNullPointer(bpred):
             bpred = None
-
+        if lvpunit is not None and isNullPointer(lvpunit):
+            lvpunit = None
         # 0x00: SW_INCR
         self.addEvent(SoftwareIncrement(self,0x00))
         # 0x01: L1I_CACHE_REFILL

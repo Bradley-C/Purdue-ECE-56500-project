@@ -97,7 +97,7 @@ class Fetch2 : public Named
     branch_prediction::BPredUnit &branchPredictor;
 
     /** Branch predictor passed from Python configuration */
-    load_value_prediction::LVPredUnit &loadValuePredictor;
+    load_value_prediction::LVPredUnit &lVPred;
 
   public:
     /* Public so that Pipeline can pass it to Fetch1 */

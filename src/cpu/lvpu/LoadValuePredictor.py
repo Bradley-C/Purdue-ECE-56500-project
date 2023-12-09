@@ -41,9 +41,8 @@ class LoadValuePredictor(SimObject):
     type = 'LoadValuePredictor'
     cxx_class = 'gem5::load_value_prediction::LVPredUnit'
     cxx_header = "cpu/lvpu/lvpu.hh"
-    abstract = True
 
-    numThreads = Param.Unsigned(Parent.numThreads, "Number of threads")
+    numThreads = Param.Unsigned(1, "Number of threads")
     LVPTEntries = Param.Unsigned(1024, "Number of LVPT entries")
     lctSize = Param.Unsigned(512, "Number of LCT entries")
     lctBits = Param.Unsigned(2, "Number of bits per LCT entry")
@@ -55,6 +54,7 @@ class LoadValuePredictor(SimObject):
     #                                      "Constant Verification Unit")
     # lvpt = Param.LoadValuePredictionTable(LoadValuePredictionTable(),
     #                                      "Load Value Prediction Table")
+
 '''
 class ConstantVerificationUnit(SimObject):
     type = 'ConstantVerificationUnit'
