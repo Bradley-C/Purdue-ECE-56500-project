@@ -210,9 +210,6 @@ def addCommonOptions(parser):
     parser.add_argument("--list-lvp-types",
                         action=ListLvp, nargs=0,
                         help="List available load value predictor types")
-    #parser.add_argument("--list-cv-types",
-                        #action=ListLvp, nargs=0,
-                        #help="List available constant value predictor types")
     parser.add_argument("--list-indirect-bp-types",
                         action=ListIndirectBP, nargs=0,
                         help="List available indirect branch predictor types")
@@ -228,9 +225,9 @@ def addCommonOptions(parser):
                         type of load value predictor to run with
                         (if not set, use the default load value predictor of
                         the selected CPU)""")
-    #parser.add_argument("--cv-type", default=None,
-                        #choices=ObjectList.lvp_list.get_names(),
-                        #help="""
+    parser.add_argument("--cvu-type", default=None,
+                        choices=ObjectList.cvu_list.get_names(),
+                        help="""
                         #type of constant value to run with
                         #(if not set, use the default constant value of
                         #the selected CPU)""")

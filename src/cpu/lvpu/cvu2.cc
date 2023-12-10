@@ -59,7 +59,7 @@ namespace gem5
 namespace load_value_prediction
 {
 
-ConstantVerificationUnit::ConstantVerificationUnit(const Params &params)
+ConstantVUnit::ConstantVUnit(const Params &params)
     : SimObject(params),
       numThreads(params.numThreads),
       predHist(numThreads),
@@ -86,7 +86,7 @@ ConstantVerificationUnit::ConstantVerificationUnit(const Params &params)
    // DPRINTF(Execute, "instruction shift amount: %i\n", instShiftAmt);
 }
 
-ConstantVerificationUnit::CVUUnitStats::CVUUnitStats(statistics::Group *parent)
+ConstantVUnit::CVUUnitStats::CVUUnitStats(statistics::Group *parent)
     : statistics::Group(parent),
       ADD_STAT(cvuLoadLookups, statistics::units::Count::get(),
                "Number of CVU Load Lookups"),
@@ -99,7 +99,7 @@ ConstantVerificationUnit::CVUUnitStats::CVUUnitStats(statistics::Group *parent)
 {}
 
 probing::PMUUPtr
-ConstantVerificationUnit::pmuProbePoint(const char *name)
+ConstantVUnit::pmuProbePoint(const char *name)
 {
     probing::PMUUPtr ptr;
     ptr.reset(new probing::PMU(getProbeManager(), name));
@@ -108,14 +108,14 @@ ConstantVerificationUnit::pmuProbePoint(const char *name)
 }
 
 void
-ConstantVerificationUnit::regProbePoints()
+ConstantVUnit::regProbePoints()
 {
     ppLoads = pmuProbePoint("Loads");
     ppMisses = pmuProbePoint("Misses");
 }
 
 void
-ConstantVerificationUnit::drainSanityCheck() const
+ConstantVUnit::drainSanityCheck() const
 {
     // We shouldn't have any outstanding requests when we resume from
     // a drained system.
@@ -125,14 +125,14 @@ ConstantVerificationUnit::drainSanityCheck() const
 
 inline
 unsigned
-ConstantVerificationUnit::getIndexCVU(Addr instPC, ThreadID tid)
+ConstantVUnit::getIndexCVU(Addr instPC, ThreadID tid)
 {
     // Need to shift PC over by the word offset.
     return (instPC >> instShiftAmt);
 }
 
 bool
-ConstantVerificationUnit::checkValid(Addr instPC, ThreadID tid)
+ConstantVUnit::checkValid(Addr instPC, ThreadID tid)
 {
     unsigned cvu_idx = getIndexCVU(instPC, tid);
 
@@ -147,7 +147,7 @@ ConstantVerificationUnit::checkValid(Addr instPC, ThreadID tid)
 }
 
 void
-ConstantVerificationUnit::updateEntry(PCStateBase &pc,
+ConstantVUnit::updateEntry(PCStateBase &pc,
 uint64_t new_value, ThreadID tid)
 {
     unsigned cvu_idx = getIndexCVU( pc.instAddr(), tid);
@@ -165,8 +165,8 @@ uint64_t new_value, ThreadID tid)
    //predHist[tid].push_front(cvu_record);
 }
 
-ConstantVerificationUnit::CVUReturn
-ConstantVerificationUnit::storeClear(PCStateBase &inst_pc,
+ConstantVUnit::CVUReturn
+ConstantVUnit::storeClear(PCStateBase &inst_pc,
  uint64_t store_addr, uint64_t new_value, ThreadID tid){
     CVUReturn return_data;
     unsigned cvu_idx = getIndexCVU(inst_pc.instAddr(), tid);
@@ -195,8 +195,8 @@ ConstantVerificationUnit::storeClear(PCStateBase &inst_pc,
     return return_data;
 }
 
-ConstantVerificationUnit::CVUReturn
-ConstantVerificationUnit::addrMatch(PCStateBase& inst_pc, uint64_t data_addr,
+ConstantVUnit::CVUReturn
+ConstantVUnit::addrMatch(PCStateBase& inst_pc, uint64_t data_addr,
 ThreadID tid) {
     unsigned cvu_idx = getIndexCVU(inst_pc.instAddr(), tid);
 
@@ -219,32 +219,37 @@ ThreadID tid) {
  }
 
 void
-ConstantVerificationUnit::update(const InstSeqNum &done_sn, uint64_t new_value,
+ConstantVUnit::update(const InstSeqNum &done_sn, uint64_t new_value,
  ThreadID tid)
 {
+
+    int i =0;/*
     while (!predHist[tid].empty() && predHist[tid].back().seqNum <= done_sn) {
 
         updateEntry(PredHist[tid].back().pc, new_value ,tid);
         CVU.update(PredHist[tid].back().pc, new_value, tid);
         predHist[tid].pop_back();
-    }
+    }*/
 }
 
 void
-ConstantVerificationUnit::squash(const InstSeqNum &squashed_sn, ThreadID tid)
+ConstantVUnit::squash(const InstSeqNum &squashed_sn, ThreadID tid)
 {
+
+    int i =0;/*
     History &pred_hist = predHist[tid];
 
   while (!pred_hist.empty() && pred_hist.front().seqNum > squashed_sn) {
         pred_hist.pop_front();
-    }
+    }*/
 }
 
 
 void
-ConstantVerificationUnit::dump()
+ConstantVUnit::dump()
 {
     int i = 0;
+    /*
     for (const auto& ph : predHist) {
         if (!ph.empty()) {
             auto pred_hist_it = ph.begin();
@@ -256,13 +261,13 @@ ConstantVerificationUnit::dump()
                         "predHist:%#x\n",
                         pred_hist_it->loadSeqNum, pred_hist_it->pc,
                         pred_hist_it->tid, pred_hist_it->predTaken,
-                        pred_hist_it->bpHistory);*/
+                        pred_hist_it->bpHistory);
                 pred_hist_it++;
             }
 
             cprintf("\n");
         }
-    }
+    }*/
 }
 
 

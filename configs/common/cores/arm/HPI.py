@@ -1351,6 +1351,11 @@ class HPI_LVPU(LoadValuePredictor):
     lctBits = 2
     instShiftAmt = 3
 
+class HPI_CVU(ConstantVerificationUnit):
+    CVUEntries = 1024
+    numAddrHold = 1
+    CVUTagSize = 32
+    instShiftAmt = 64-10
 
 class HPI_ICache(Cache):
     data_latency = 1
@@ -1435,11 +1440,12 @@ class HPI(ArmMinorCPU):
 
     branchPred = HPI_BP()
     loadValuePred = HPI_LVPU()
+    constantVU = HPI_CVU()
 
     mmu = HPI_MMU()
 
 __all__ = [
-    "HPI_BP", "HPI_LVPU",
+    "HPI_BP", "HPI_LVPU", "HPI_CVU",
     "HPI_ITB", "HPI_DTB",
     "HPI_ICache", "HPI_DCache", "HPI_L2",
     "HPI",

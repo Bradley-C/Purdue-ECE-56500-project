@@ -486,9 +486,9 @@ def run(options, root, testsys, cpu_class):
             if options.lvp_type:
                 lvpClass = ObjectList.lvp_list.get(options.lvp_type)
                 switch_cpus[i].loadValuePred = lvpClass()
-            #if options.cv_type:
-                #cvClass = ObjectList.cv_list.get(options.lvp_type)
-                #switch_cpus[i].loadValuePred = cvClass()
+            if options.cvu_type:
+                cvuClass = ObjectList.cvu_list.get(options.cvu_type)
+                switch_cpus[i].constantVU = cvuClass()
             if options.indirect_bp_type:
                 IndirectBPClass = ObjectList.indirect_bp_list.get(
                     options.indirect_bp_type)

@@ -250,9 +250,9 @@ for i in range(np):
         lvpClass = ObjectList.lvp_list.get(args.lvp_type)
         system.cpu[i].loadValuePred = lvpClass()
 
-    #if args.cv_type:
-        #cvClass = ObjectList.cv_list.get(args.lvp_type)
-        #system.cpu[i].constantVU = cvClass()
+    if args.cvu_type:
+        cvuClass = ObjectList.cvu_list.get(args.cvu_type)
+        system.cpu[i].constantVU = cvuClass()
 
     if args.indirect_bp_type:
         indirectBPClass = \

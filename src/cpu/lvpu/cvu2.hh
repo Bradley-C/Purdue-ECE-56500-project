@@ -62,7 +62,7 @@ namespace load_value_prediction
 /**
  * Basically a wrapper class to hold both the constant value unit
  */
-class ConstantVerificationUnit : public SimObject
+class ConstantVUnit : public SimObject
 {
 
   private:
@@ -155,7 +155,7 @@ class ConstantVerificationUnit : public SimObject
     /**
      * @param params The params object, that has the size of the LVPU and LVPT.
      */
-    ConstantVerificationUnit(const Params &p);
+    ConstantVUnit(const Params &p);
 
     struct CVUReturn
     {
@@ -186,7 +186,7 @@ class ConstantVerificationUnit : public SimObject
      *  @param tid The thread id.
      *  @return CVUReturn that tells the LVPT/LCT how to update
      */
-    ConstantVerificationUnit::CVUReturn storeClear(PCStateBase &inst_pc,
+    ConstantVUnit::CVUReturn storeClear(PCStateBase &inst_pc,
     uint64_t data_addr, uint64_t new_addr, ThreadID tid);
 
     /** Do CAM search for given PC and Load Addr, used to pass cache
@@ -196,7 +196,7 @@ class ConstantVerificationUnit : public SimObject
      *  @param tid The thread id.
      *  @return CVUReturn that tells the LVPT/LCT how to update
      */
-    ConstantVerificationUnit::CVUReturn addrMatch(PCStateBase &inst_pc,
+    ConstantVUnit::CVUReturn addrMatch(PCStateBase &inst_pc,
     uint64_t data_addr, ThreadID tid);
 
     /**

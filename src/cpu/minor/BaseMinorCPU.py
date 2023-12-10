@@ -44,6 +44,7 @@ from m5.objects.BaseCPU import BaseCPU
 from m5.objects.DummyChecker import DummyChecker
 from m5.objects.BranchPredictor import *
 from m5.objects.LoadValuePredictor import *
+from m5.objects.ConstantVerificationUnit import *
 from m5.objects.TimingExpr import TimingExpr
 
 from m5.objects.FuncUnit import OpClass
@@ -290,7 +291,7 @@ class BaseMinorCPU(BaseCPU):
 
     loadValuePred = Param.LoadValuePredictor("Load Value Predictor")
 
-    #constantVU = Param.ConstantVerificationUnit("Constant Verification Table")
+    constantVU = Param.ConstantVerificationUnit("Constant Verification Table")
 
 
     def addCheckerCpu(self):

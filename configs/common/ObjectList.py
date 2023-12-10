@@ -163,7 +163,7 @@ class EnumList(ObjectList):
 rp_list = ObjectList(getattr(m5.objects, 'BaseReplacementPolicy', None))
 bp_list = ObjectList(getattr(m5.objects, 'BranchPredictor', None))
 lvp_list = ObjectList(getattr(m5.objects, 'LoadValuePredictor', None))
-#cv_list = ObjectList(getattr(m5.objects, 'ConstantVerificationUnit', None))
+cvu_list = ObjectList(getattr(m5.objects, 'ConstantVerificationUnit', None))
 cpu_list = CPUList(getattr(m5.objects, 'BaseCPU', None))
 hwp_list = ObjectList(getattr(m5.objects, 'BasePrefetcher', None))
 indirect_bp_list = ObjectList(getattr(m5.objects, 'IndirectPredictor', None))

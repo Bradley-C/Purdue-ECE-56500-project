@@ -81,7 +81,7 @@ Execute::Execute(const std::string &name_,
     setTraceTimeOnIssue(params.executeSetTraceTimeOnIssue),
     allowEarlyMemIssue(params.executeAllowEarlyMemoryIssue),
 
-    //constantValueUnit(*params.constantVU),
+    conValueUnit(*params.constantVU),
 
     noCostFUIndex(fuDescriptions.funcUnits.size() + 1),
     lsq(name_ + ".lsq", name_ + ".dcache_port",
@@ -1160,15 +1160,16 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
             } else {
 
                 handleMemResponse(inst, mem_response, branch, fault);
-                //bool is_store = inst->staticInst->isStore();
-                //bool is_load = inst->staticInst->isLoad();
-                completed_inst = true;
+
                 //issued_mem_ref = true;
-                //if (is_store){
-/*
-    load_value_prediction::ConstantVerificationUnit::CVUReturn
+
+                /*bool is_store = inst->staticInst->isStore();
+                bool is_load = inst->staticInst->isLoad();
+                if (is_store){
+
+    load_value_prediction::ConstantVUnit::CVUReturn
     cvuResult;
-    cvuResult = constantValueUnit.storeClear(*inst->pc,
+    cvuResult = conValueUnit.storeClear(*inst->pc,
     (uint64_t) inst->traceData->getAddr(),
     inst->traceData->getIntData(),thread_id);
                     if (cvuResult.clear){
@@ -1182,9 +1183,9 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
 
                     if ((int)inp.outputWire->LCT_value==3){
 
-load_value_prediction::ConstantVerificationUnit::CVUReturn
+load_value_prediction::ConstantVUnit::CVUReturn
 cvuResult;
-cvuResult = constantValueUnit.addrMatch(*inst->pc,
+cvuResult = conValueUnit.addrMatch(*inst->pc,
 (uint64_t)inst->traceData->getAddr(), thread_id);
 
                         if (!cvuResult.clear){
@@ -1195,7 +1196,7 @@ cvuResult = constantValueUnit.addrMatch(*inst->pc,
                         }
                         else{
                         out.inputWire->new_LVPT_value = cvuResult.value;
-constantValueUnit.updateEntry(*inst->pc,
+conValueUnit.updateEntry(*inst->pc,
 inst->traceData->getIntData(),thread_id);
                         }
 
@@ -1205,7 +1206,7 @@ if (inst->traceData->getIntData() == inp.outputWire->LVPT_value)
                         {
                             out.inputWire->pass_fail_LCT = true;
                             if ((int)inp.outputWire->LCT_value==2){
-constantValueUnit.updateEntry(*inst->pc,
+conValueUnit.updateEntry(*inst->pc,
 inp.outputWire->LVPT_value,thread_id);
                             }
                         }
@@ -1216,11 +1217,15 @@ inp.outputWire->LVPT_value,thread_id);
                     }
 
                 }
-                committed_inst = true;*/
-            }
 
-            completed_mem_ref = true;
-        } else if (can_commit_insts) {
+            }*/
+            committed_inst = true;
+            }
+                        completed_mem_ref = true;
+
+             completed_inst = true;
+
+            }else if (can_commit_insts) {
             /* If true, this instruction will, subject to timing tweaks,
              *  be considered for completion.  try_to_commit flattens
              *  the `if' tree a bit and allows other tests for inst
