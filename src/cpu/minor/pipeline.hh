@@ -61,6 +61,7 @@ GEM5_DEPRECATED_NAMESPACE(Minor, minor);
 namespace minor
 {
 
+#ifdef ENABLE_16STAGES
 /**
  * @namespace minor
  *
@@ -175,6 +176,79 @@ class Pipeline : public Ticked
     /** To give the activity recorder to the CPU */
     MinorActivityRecorder *getActivityRecorder() { return &activityRecorder; }
 };
+#else
+class Pipeline : public Ticked
+{
+  protected:
+    MinorCPU &cpu;
+
+    /** Allow cycles to be skipped when the pipeline is idle */
+    bool allow_idling;
+
+    Latch<ForwardLineData> f1ToF2;
+    Latch<BranchData> f2ToF1;
+    Latch<ForwardInstData> f2ToD;
+    Latch<ForwardInstData> dToE;
+    Latch<BranchData> eToF1;
+
+    Execute execute;
+    Decode decode;
+    Fetch2 fetch2;
+    Fetch1 fetch1;
+
+    /** Activity recording for the pipeline.  This is access through the CPU
+     *  by the pipeline stages but belongs to the Pipeline as it is the
+     *  cleanest place to initialise it */
+    MinorActivityRecorder activityRecorder;
+
+  public:
+    /** Enumerated ids of the 'stages' for the activity recorder */
+    enum StageId
+    {
+        /* A stage representing wakeup of the whole processor */
+        CPUStageId = 0,
+        /* Real pipeline stages */
+        Fetch1StageId, Fetch2StageId, DecodeStageId, ExecuteStageId,
+        Num_StageId /* Stage count */
+    };
+
+    /** True after drain is called but draining isn't complete */
+    bool needToSignalDrained;
+
+  public:
+    Pipeline(MinorCPU &cpu_, const BaseMinorCPUParams &params);
+
+  public:
+    /** Wake up the Fetch unit.  This is needed on thread activation esp.
+     *  after quiesce wakeup */
+    void wakeupFetch(ThreadID tid);
+
+    /** Try to drain the CPU */
+    bool drain();
+
+    void drainResume();
+
+    /** Test to see if the CPU is drained */
+    bool isDrained();
+
+    /** A custom evaluate allows report in the right place (between
+     *  stages and pipeline advance) */
+    void evaluate() override;
+
+    void minorTrace() const;
+
+    /** Functions below here are BaseCPU operations passed on to pipeline
+     *  stages */
+
+    /** Return the IcachePort belonging to Fetch1 for the CPU */
+    MinorCPU::MinorCPUPort &getInstPort();
+    /** Return the DcachePort belonging to Execute for the CPU */
+    MinorCPU::MinorCPUPort &getDataPort();
+
+    /** To give the activity recorder to the CPU */
+    MinorActivityRecorder *getActivityRecorder() { return &activityRecorder; }
+};
+#endif
 
 } // namespace minor
 } // namespace gem5
