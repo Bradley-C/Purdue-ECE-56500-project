@@ -124,7 +124,7 @@ dynInstAddTracing(MinorDynInstPtr inst, StaticInstPtr static_inst,
 }
 #endif
 
-#ifdef ENABLE_16STAGES
+#if ENABLE_16STAGES
 void
 Decode::evaluate1()
 {
@@ -297,8 +297,6 @@ Decode::evaluate1()
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
     out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode1 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
 }
 #else
 void
@@ -475,7 +473,7 @@ Decode::evaluate()
 }
 #endif
 
-#ifdef ENABLE_16STAGES
+#if ENABLE_16STAGES
 void
 Decode::evaluate2()
 {

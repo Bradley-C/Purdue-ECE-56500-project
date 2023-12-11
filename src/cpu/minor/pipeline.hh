@@ -61,7 +61,7 @@ GEM5_DEPRECATED_NAMESPACE(Minor, minor);
 namespace minor
 {
 
-#ifdef ENABLE_16STAGES
+#if ENABLE_16STAGES
 /**
  * @namespace minor
  *

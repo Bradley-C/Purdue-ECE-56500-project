@@ -54,7 +54,7 @@ GEM5_DEPRECATED_NAMESPACE(Minor, minor);
 namespace minor
 {
 
-#ifdef ENABLE_16STAGES
+#if ENABLE_16STAGES
 Pipeline::Pipeline(MinorCPU &cpu_, const BaseMinorCPUParams &params) :
     Ticked(cpu_, &(cpu_.BaseCPU::baseStats.numCycles)),
     cpu(cpu_),
@@ -180,8 +180,6 @@ Pipeline::Pipeline(MinorCPU &cpu_, const BaseMinorCPUParams &params) :
         fatal("%s: executeBranchDelay must be >= 1\n",
             cpu.name(), params.executeBranchDelay);
     }
-
-    std::cout << "This is a test" << std::endl;
 }
 #else
 Pipeline::Pipeline(MinorCPU &cpu_, const BaseMinorCPUParams &params) :
@@ -237,7 +235,7 @@ Pipeline::Pipeline(MinorCPU &cpu_, const BaseMinorCPUParams &params) :
 }
 #endif
 
-#ifdef ENABLE_16STAGES
+#if ENABLE_16STAGES
 void
 Pipeline::minorTrace() const
 {
@@ -299,7 +297,7 @@ Pipeline::minorTrace() const
 }
 #endif
 
-#ifdef ENABLE_16STAGES
+#if ENABLE_16STAGES
 void
 Pipeline::evaluate()
 {
@@ -508,7 +506,7 @@ Pipeline::drainResume()
     execute.drainResume();
 }
 
-#ifdef ENABLE_16STAGES
+#if ENABLE_16STAGES
 bool
 Pipeline::isDrained()
 {

@@ -72,7 +72,7 @@
 #define __GEM5_COMPONENT_H__
 
 #define TRACING_ON 0
-#define ENABLE_16STAGES
+#define ENABLE_16STAGES 0
 
 #include <string>
 #include <vector>

@@ -59,7 +59,7 @@ namespace gem5
 GEM5_DEPRECATED_NAMESPACE(Minor, minor);
 namespace minor
 {
-#ifdef ENABLE_16STAGES
+#if ENABLE_16STAGES
 /* Decode takes instructions from Fetch2 and decomposes them into micro-ops
  * to feed to Execute.  It generates a new sequence number for each
  * instruction: execSeqNum.
