@@ -208,7 +208,7 @@ ThreadID tid) {
     return_data = (CVUReturn){.pc=inst_pc.instAddr(), .value=data_addr,
     .clear=true, .update=true};
     for (unsigned j = 0; j < numAddrperEntry; j++) {
-        if (cvu[cvu_idx][j].value == data_addr && cvu[i][j].valid){
+        if (cvu[cvu_idx][j].value == data_addr && cvu[cvu_idx][j].valid){
             // Figure out how to pass value being stored to here as
             // well
             return_data = (CVUReturn){.pc=inst_pc.instAddr(), .value=data_addr,
