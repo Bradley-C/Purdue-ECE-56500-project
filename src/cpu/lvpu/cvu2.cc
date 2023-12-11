@@ -128,7 +128,7 @@ unsigned
 ConstantVUnit::getIndexCVU(Addr instPC, ThreadID tid)
 {
     // Need to shift PC over by the word offset.
-    return (instPC &= (numEntries-1));
+    return ((instPC >> instShiftAmt) & (numEntries-1));
 }
 
 bool
