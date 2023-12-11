@@ -110,6 +110,7 @@ class ConstantVUnit : public SimObject
 
     /** The actual CVU. */
     std::vector<std::vector<CVUEntry>> cvu; // Declare a 2D array
+    //CVUEntry cvu[numEntries][numAddrperEntry]; // Declare a 2D array
 
     /** The number of entries in the CVU. */
     const unsigned numEntries;
@@ -160,13 +161,15 @@ class ConstantVUnit : public SimObject
     struct CVUReturn
     {
         /** The entry's index to clear */
-        Addr pc;
+        Addr pc = 0;
 
         /** The entry's value to replace old*/
-        uint64_t value;
+        uint64_t value = 0;
 
         /** Whether or not the replacement is valid. */
         bool clear = false;
+
+        bool update = false;
     };
 
     /** Updates the CVU an entry with a new addr when new constant
@@ -230,7 +233,7 @@ class ConstantVUnit : public SimObject
          * information needed to update the CVU.
          */
         PredictorHistory(const InstSeqNum &seq_num, Addr instPC,
-                         std::vector<std::vector<CVUEntry>> _CVUTable,
+                        std::vector<std::vector<CVUEntry>> _CVUTable,
                          ThreadID _tid, const StaticInstPtr & inst,
                          uint64_t _data)
             : seqNum(seq_num), pc(instPC), CVUTable(_CVUTable),
@@ -264,7 +267,7 @@ class ConstantVUnit : public SimObject
         const StaticInstPtr inst;
 
         /** The load classification*/
-        std::vector<std::vector<CVUEntry>> CVUTable;
+        std::vector<std::vector<CVUEntry>> CVUTable ;
 
         /** The thread id. */
         ThreadID tid;

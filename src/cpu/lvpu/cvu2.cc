@@ -128,7 +128,7 @@ unsigned
 ConstantVUnit::getIndexCVU(Addr instPC, ThreadID tid)
 {
     // Need to shift PC over by the word offset.
-    return (instPC >> instShiftAmt);
+    return (instPC &= (numEntries-1));
 }
 
 bool
@@ -175,20 +175,21 @@ ConstantVUnit::storeClear(PCStateBase &inst_pc,
 
     return_data = (CVUReturn){.pc=inst_pc.instAddr(),
     .value=cvu[cvu_idx][0].value,
-    .clear=false};
+    .clear=false, .update=false};
     for (unsigned i = 0; i < numEntries; i++) {
         for (unsigned j = 0; j < numAddrperEntry; j++) {
-            if (cvu[i][j].value == store_addr){
+            if (cvu[i][j].value == store_addr && cvu[i][j].valid){
                 // Figure out how to pass value being stored
                 //to here as
                 // well
                 return_data = (CVUReturn)
                 {.pc=inst_pc.instAddr(), .value=new_value,
-                .clear=true};
+                .clear=true,  .update=true};
                 ++stats.loadMatched;
             }
             else{
-                ++stats.loadMatchedIncorrect;
+                if (j==numAddrperEntry-1 && i==numEntries-1){
+                ++stats.loadMatchedIncorrect;}
             }
         }
     }
@@ -205,13 +206,13 @@ ThreadID tid) {
 
     CVUReturn return_data;
     return_data = (CVUReturn){.pc=inst_pc.instAddr(), .value=data_addr,
-    .clear=true};
+    .clear=true, .update=true};
     for (unsigned j = 0; j < numAddrperEntry; j++) {
-        if (cvu[cvu_idx][j].value == data_addr){
+        if (cvu[cvu_idx][j].value == data_addr && cvu[i][j].valid){
             // Figure out how to pass value being stored to here as
             // well
             return_data = (CVUReturn){.pc=inst_pc.instAddr(), .value=data_addr,
-            .clear=false};
+            .clear=false, .update=true};
         }
     }
 

@@ -1140,15 +1140,16 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
             /* Branch as there was a change in PC */
             updateBranchData(thread_id, BranchData::UnpredictedBranch,
                 MinorDynInst::bubble(), thread->pcState(), branch);
-        } else if (mem_response &&
-            num_mem_refs_committed < memoryCommitLimit)
-        {
+        }
+        else if (mem_response &&
+            num_mem_refs_committed < memoryCommitLimit){
             /* Try to commit from the memory responses next */
             discard_inst = inst->id.streamSeqNum !=
                            ex_info.streamSeqNum || discard;
 
             DPRINTF(MinorExecute, "Trying to commit mem response: %s\n",
                 *inst);
+            completed_mem_ref = true;
             completed_inst = true;
             /* Complete or discard the response */
             if (discard_inst) {
@@ -1157,75 +1158,94 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                     *inst, ex_info.streamSeqNum);
 
                 lsq.popResponse(mem_response);
-            } else {
-
-                handleMemResponse(inst, mem_response, branch, fault);
+            }
+            else {
+                PacketPtr packet = mem_response->packet;
 
                 //issued_mem_ref = true;
-
-                /*bool is_store = inst->staticInst->isStore();
+                bool is_store = inst->staticInst->isStore();
                 bool is_load = inst->staticInst->isLoad();
-                if (is_store){
+                if (is_store && packet){
+                    uint64_t addr_check =static_cast<uint64_t>(packet->getAddr
+                    ());
+                    uint64_t new_value =static_cast<uint64_t>
+                    ((packet->getConstPtr<uint64_t>()[0]));
 
-    load_value_prediction::ConstantVUnit::CVUReturn
-    cvuResult;
-    cvuResult = conValueUnit.storeClear(*inst->pc,
-    (uint64_t) inst->traceData->getAddr(),
-    inst->traceData->getIntData(),thread_id);
-                    if (cvuResult.clear){
-                        out.inputWire->pass_fail_LCT = false;
-                        out.inputWire->new_LVPT_value = cvuResult.value;
-                    }
+                    load_value_prediction::ConstantVUnit::CVUReturn
+                    cvuResult;
+                    cvuResult = conValueUnit.storeClear(*inst->pc,
+                    addr_check,
+                    new_value,
+                    thread_id);
+
+                    out.inputWire->pass_fail_LCT = cvuResult.clear;
+                    out.inputWire->new_LVPT_value = cvuResult.value;
+                    out.inputWire->update_LVPU = cvuResult.update;
+                    out.inputWire->returnPC = cvuResult.pc;
                 }
+
                 //Check if LVPT matches mem access
-                else if (is_load) {
-                    out.inputWire->pass_fail_LCT = false;
+                if (is_load ) {
+                    PacketPtr packet = mem_response->packet;
+                    if (packet){
+                        uint64_t addr_check = static_cast<uint64_t>
+                        (packet->getAddr());
+                        uint64_t new_value =static_cast<uint64_t>
+                        ((packet->getConstPtr<uint64_t>()[0]));
+                        std::cout <<  inp.outputWire->LCT_value << std::endl;
 
-                    if ((int)inp.outputWire->LCT_value==3){
+                        if ((int)inp.outputWire->LCT_value==3){
 
-load_value_prediction::ConstantVUnit::CVUReturn
-cvuResult;
-cvuResult = conValueUnit.addrMatch(*inst->pc,
-(uint64_t)inst->traceData->getAddr(), thread_id);
+                            load_value_prediction::ConstantVUnit::CVUReturn
+                            cvuResult;
+                            cvuResult = conValueUnit.addrMatch(*inst->pc,
+                            addr_check, thread_id);
+                            out.inputWire->pass_fail_LCT = cvuResult.clear;
+                            out.inputWire->new_LVPT_value = cvuResult.value;
+                            out.inputWire->update_LVPU = cvuResult.update;
+                            out.inputWire->returnPC = cvuResult.pc;
 
-                        if (!cvuResult.clear){
-                            issued_mem_ref=false;
-                            completed_inst = false;
-                            lsq.popResponse(mem_response);
-                            out.inputWire->pass_fail_LCT = true;
-                        }
-                        else{
-                        out.inputWire->new_LVPT_value = cvuResult.value;
-conValueUnit.updateEntry(*inst->pc,
-inst->traceData->getIntData(),thread_id);
-                        }
-
-                    }
-                    else{
-if (inst->traceData->getIntData() == inp.outputWire->LVPT_value)
-                        {
-                            out.inputWire->pass_fail_LCT = true;
-                            if ((int)inp.outputWire->LCT_value==2){
-conValueUnit.updateEntry(*inst->pc,
-inp.outputWire->LVPT_value,thread_id);
+                            if (!cvuResult.clear){
+                                issued_mem_ref=false;
+                                completed_inst = false;
+                                lsq.popResponse(mem_response);
+                            }
+                            else{
+                                conValueUnit.updateEntry(*inst->pc, new_value,
+                                thread_id);
                             }
                         }
                         else{
-    out.inputWire->new_LVPT_value = inst->traceData->getIntData();
-                        }
+                            out.inputWire->pass_fail_LCT = false;
+                            out.inputWire->new_LVPT_value =
+                            inp.outputWire->LVPT_value;
+                            out.inputWire->update_LVPU = true;
+                            out.inputWire->returnPC = inst->pc->instAddr();
+                            std::cout <<  inp.outputWire->LVPT_value <<
+                            std::endl;
+                            if (new_value == inp.outputWire->LVPT_value) {
+                                out.inputWire->pass_fail_LCT = true;
 
+                                if ((int)inp.outputWire->LCT_value==2){
+                                    conValueUnit.updateEntry(*inst->pc,
+                                    inp.outputWire->LVPT_value,thread_id);
+                                }
+                            }
+                            else{
+                                out.inputWire->new_LVPT_value = new_value;
+                            }
+                        }
                     }
 
                 }
+                handleMemResponse(inst, mem_response, branch, fault);
 
-            }*/
-            committed_inst = true;
+                committed_inst = true;
             }
-                        completed_mem_ref = true;
 
-             completed_inst = true;
 
-            }else if (can_commit_insts) {
+
+        } else if (can_commit_insts) {
             /* If true, this instruction will, subject to timing tweaks,
              *  be considered for completion.  try_to_commit flattens
              *  the `if' tree a bit and allows other tests for inst
@@ -1497,8 +1517,8 @@ Execute::evaluate()
 
     BranchData &branch = *out.inputWire;
 
-    branch.pass_fail_LCT = true;
-    branch.new_LVPT_value = 75;
+    //branch.pass_fail_LCT = false;
+    //branch.new_LVPT_value = 75;
 
     unsigned int num_issued = 0;
 

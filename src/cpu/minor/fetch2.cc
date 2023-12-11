@@ -252,7 +252,13 @@ Fetch2::evaluate()
     //if (insts_out.LVPT_value != 55){
     //insts_out.LVPT_value = 55;
     //}
+/*/
+    if (branch_inp.pass_fail_LCT){
 
+        update(const InstSeqNum &done_sn, uint64_t corrData, ThreadID tid)
+
+        branch_inp.new_LVPT_value
+    }*/
   //  std::cout << "Pass or Fail in LCT: "
   //  << branch_inp.pass_fail_LCT << std::endl;
   //  std::cout << "New Value in LVPT: "

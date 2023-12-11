@@ -73,10 +73,10 @@ class ListLvp(argparse.Action):
         ObjectList.lvp_list.print()
         sys.exit(0)
 
-#class ListCv(argparse.Action):
-    #def __call__(self, parser, namespace, values, option_string=None):
-        #ObjectList.cv_list.print()
-        #sys.exit(0)
+class ListCvu(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        ObjectList.cvu_list.print()
+        sys.exit(0)
 
 
 class ListHWP(argparse.Action):

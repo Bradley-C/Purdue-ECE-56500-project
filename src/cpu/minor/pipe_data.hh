@@ -126,8 +126,9 @@ class BranchData /* : public ReportIF, public BubbleIF */
     /** Instruction which caused this branch */
     MinorDynInstPtr inst = MinorDynInst::bubble();
 
+    Addr returnPC;
+    bool update_LVPU=false;
     bool pass_fail_LCT;
-
     uint64_t new_LVPT_value;
 
   public:
