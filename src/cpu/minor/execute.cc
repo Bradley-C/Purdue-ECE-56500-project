@@ -1212,11 +1212,13 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                                     std::cout << "Mem response is available"
                                     << std::endl;
                                  }
+                                /*
                                 lsq.popResponse(mem_response);
                                 if (!mem_response){
                                     std::cout << "Mem response was deleted"
                                     << std::endl;
                                  }
+                                 */
                             }
                             else{
                                 conValueUnit.updateEntry(*inst->pc, new_value,
