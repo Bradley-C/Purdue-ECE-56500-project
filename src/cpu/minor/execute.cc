@@ -221,7 +221,8 @@ Execute::popInput(ThreadID tid)
 }
 
 void
-Execute::tryToBranch(MinorDynInstPtr inst, Fault fault, BranchData &branch)
+Execute::tryToBranch(MinorDynInstPtr inst, Fault fault, BranchData &branch,
+                      LoadData &load)
 {
     ThreadContext *thread = cpu.getContext(inst->id.threadId);
     const std::unique_ptr<PCStateBase> pc_before(inst->pc->clone());
@@ -296,7 +297,17 @@ Execute::tryToBranch(MinorDynInstPtr inst, Fault fault, BranchData &branch)
         reason = BranchData::NoBranch;
     }
 
-    updateBranchData(inst->id.threadId, reason, inst, *target, branch);
+    updateBranchData(inst->id.threadId, reason, inst, *target, branch, load);
+}
+
+void
+Execute::restoreLoadData(BranchData &branch, LoadData &load)
+{
+    branch.update_LVPU = load.update_lvpu;
+    branch.pass_fail_LCT = load.is_correct;
+    branch.new_LVPT_value = load.new_load_data;
+    branch.newLoadSize = load.new_size;
+    branch.returnPC = load.load_inst_pc;
 }
 
 void
@@ -304,7 +315,8 @@ Execute::updateBranchData(
     ThreadID tid,
     BranchData::Reason reason,
     MinorDynInstPtr inst, const PCStateBase &target,
-    BranchData &branch)
+    BranchData &branch,
+    LoadData &load)
 {
     if (reason != BranchData::NoBranch) {
         /* Bump up the stream sequence number on a real branch*/
@@ -321,23 +333,16 @@ Execute::updateBranchData(
                 : inst->id.predictionSeqNum),
             target, inst);
 
+        restoreLoadData(branch, load);
+
         DPRINTF(Branch, "Branch data signalled: %s\n", branch);
     }
 }
 
 void
-updateLoadData(ThreadID tid, MinorDynInstPtr inst, bool is_correct,
-          uint8_t *corr_data, unsigned corr_size, BranchData &branch)
-{
-    branch.update_LVPU = true;
-    branch.pass_fail_LCT = is_correct;
-    branch.new_LVPT_value = corr_data;
-    branch.newLoadSize = corr_size;
-}
-
-void
 Execute::handleMemResponse(MinorDynInstPtr inst,
-    LSQ::LSQRequestPtr response, BranchData &branch, Fault &fault)
+    LSQ::LSQRequestPtr response, BranchData &branch, LoadData &load,
+    Fault &fault)
 {
     ThreadID thread_id = inst->id.threadId;
     ThreadContext *thread = cpu.getContext(thread_id);
@@ -423,7 +428,7 @@ Execute::handleMemResponse(MinorDynInstPtr inst,
     doInstCommitAccounting(inst);
 
     /* Generate output to account for branches */
-    tryToBranch(inst, fault, branch);
+    tryToBranch(inst, fault, branch, load);
 }
 
 bool
@@ -433,7 +438,7 @@ Execute::isInterrupted(ThreadID thread_id) const
 }
 
 bool
-Execute::takeInterrupt(ThreadID thread_id, BranchData &branch)
+Execute::takeInterrupt(ThreadID thread_id, BranchData &branch, LoadData &load)
 {
     DPRINTF(MinorInterrupt, "Considering interrupt status from PC: %s\n",
         cpu.getContext(thread_id)->pcState());
@@ -454,7 +459,7 @@ Execute::takeInterrupt(ThreadID thread_id, BranchData &branch)
 
         updateBranchData(thread_id, BranchData::Interrupt,
             MinorDynInst::bubble(), cpu.getContext(thread_id)->pcState(),
-            branch);
+            branch, load);
     }
 
     return interrupt != NoFault;
@@ -908,7 +913,7 @@ Execute::doInstCommitAccounting(MinorDynInstPtr inst)
 
 bool
 Execute::commitInst(MinorDynInstPtr inst, bool early_memory_issue,
-    BranchData &branch, Fault &fault, bool &committed,
+    BranchData &branch, LoadData &load, Fault &fault, bool &committed,
     bool &completed_mem_issue)
 {
     ThreadID thread_id = inst->id.threadId;
@@ -933,7 +938,7 @@ Execute::commitInst(MinorDynInstPtr inst, bool early_memory_issue,
         fault = inst->fault;
         inst->fault->invoke(thread, NULL);
 
-        tryToBranch(inst, fault, branch);
+        tryToBranch(inst, fault, branch, load);
     } else if (inst->staticInst->isMemRef()) {
         /* Memory accesses are executed in two parts:
          *  executeMemRefInst -- calculates the EA and issues the access
@@ -966,7 +971,7 @@ Execute::commitInst(MinorDynInstPtr inst, bool early_memory_issue,
                     fault->name());
                 fault->invoke(thread, NULL);
 
-                tryToBranch(inst, fault, branch);
+                tryToBranch(inst, fault, branch, load);
                 completed_inst = true;
             }
         } else {
@@ -1015,7 +1020,7 @@ Execute::commitInst(MinorDynInstPtr inst, bool early_memory_issue,
         }
 
         doInstCommitAccounting(inst);
-        tryToBranch(inst, fault, branch);
+        tryToBranch(inst, fault, branch, load);
     }
 
     if (completed_inst) {
@@ -1041,7 +1046,7 @@ Execute::commitInst(MinorDynInstPtr inst, bool early_memory_issue,
             cpu.stats.numFetchSuspends++;
 
             updateBranchData(thread_id, BranchData::SuspendThread, inst,
-                resume_pc, branch);
+                resume_pc, branch, load);
         }
     }
 
@@ -1149,7 +1154,7 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
 
             /* Branch as there was a change in PC */
             updateBranchData(thread_id, BranchData::UnpredictedBranch,
-                MinorDynInst::bubble(), thread->pcState(), branch);
+                MinorDynInst::bubble(), thread->pcState(), branch, lvp_state);
         }
         else if (mem_response &&
             num_mem_refs_committed < memoryCommitLimit){
@@ -1176,6 +1181,12 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                 bool is_store = inst->staticInst->isStore();
                 bool is_load = inst->staticInst->isLoad();
                 if (is_store && packet){
+                    // std::cout << 'oldValue:'
+                    //               << std::hex << *inp.outputWire->LVPT_value
+                    //               << ' newValue:'
+                    //               << *packet->getPtr<uint8_t>()
+                    //               << std::dec << std::endl;
+
                     uint64_t addr_check =static_cast<uint64_t>(packet->getAddr
                     ());
                     uint8_t *new_value = packet->getPtr<uint8_t>();
@@ -1199,8 +1210,13 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                     uint8_t *new_value = packet->getPtr<uint8_t>();
                     //std::cout <<  inp.outputWire->LCT_value << std::endl;
 
-                    if ((int)inp.outputWire->LCT_value==3){
+                    // std::cout << 'oldValue:'
+                    //               << std::hex << *inp.outputWire->LVPT_value
+                    //               << ' newValue:'
+                    //               << *new_value
+                    //               << std::dec << std::endl;
 
+                    if ((int)inp.outputWire->LCT_value==3){
                         load_value_prediction::ConstantVUnit::CVUReturn
                         cvuResult;
                         cvuResult = conValueUnit.addrMatch(*inst->pc,
@@ -1250,7 +1266,8 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                         }
                     }
                 }
-                handleMemResponse(inst, mem_response, branch, fault);
+                handleMemResponse(inst, mem_response, branch, lvp_state,
+                                  fault);
 
                 committed_inst = true;
             }
@@ -1400,7 +1417,7 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                         completed_inst = false;
                     } else {
                         completed_inst = commitInst(inst,
-                            early_memory_issue, branch, fault,
+                            early_memory_issue, branch, lvp_state, fault,
                             committed_inst, issued_mem_ref);
                     }
                 } else {
@@ -1531,7 +1548,8 @@ Execute::evaluate()
 
     /* state for lvp data to replace in BranchData at the end so that it
      * isn't clobbered during branch updated */
-    LoadData lvp_state;
+    LoadData lvp_state = {.new_load_data = inp.outputWire->LVPT_value,
+                          .new_size      = inp.outputWire->loadSize};
 
     //branch.pass_fail_LCT = false;
     //branch.new_LVPT_value = 75;
@@ -1544,7 +1562,7 @@ Execute::evaluate()
 
     /* Check interrupts first.  Will halt commit if interrupt found */
     bool interrupted = false;
-    ThreadID interrupt_tid = checkInterrupts(branch, interrupted);
+    ThreadID interrupt_tid = checkInterrupts(branch, interrupted, lvp_state);
 
     if (interrupt_tid != InvalidThreadID) {
         /* Signalling an interrupt this cycle, not issuing/committing from
@@ -1596,7 +1614,8 @@ Execute::evaluate()
             if (commit_info.drainState == DrainHaltFetch) {
                 updateBranchData(commit_tid, BranchData::HaltFetch,
                         MinorDynInst::bubble(),
-                        cpu.getContext(commit_tid)->pcState(), branch);
+                        cpu.getContext(commit_tid)->pcState(), branch,
+                        lvp_state);
 
                 cpu.wakeupOnEvent(Pipeline::ExecuteStageId);
                 setDrainState(commit_tid, DrainAllInsts);
@@ -1726,7 +1745,7 @@ Execute::evaluate()
 }
 
 ThreadID
-Execute::checkInterrupts(BranchData& branch, bool& interrupted)
+Execute::checkInterrupts(BranchData& branch, bool& interrupted, LoadData &load)
 {
     ThreadID tid = interruptPriority;
     /* Evaluate interrupts in round-robin based upon service */
@@ -1748,7 +1767,7 @@ Execute::checkInterrupts(BranchData& branch, bool& interrupted)
                 tid, thread_interrupted, isInbetweenInsts(tid));
         /* Act on interrupts */
         if (thread_interrupted && isInbetweenInsts(tid)) {
-            if (takeInterrupt(tid, branch)) {
+            if (takeInterrupt(tid, branch, load)) {
                 interruptPriority = tid;
                 return tid;
             }
