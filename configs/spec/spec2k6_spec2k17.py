@@ -503,9 +503,10 @@ def get_process(options, target_isa="arm"):
     h264ref.executable =  exe_dir_06+h264ref_dir+\
         'exe/h264ref' + exe_suffix
     data= bench_dir_06+h264ref_dir+\
-         '/data/ref/input/foreman_ref_encoder_baseline.cfg'
-    h264ref.cmd = [h264ref.executable]+[data]
-    h264ref.output = 'h264ref.log'
+    '/data/ref/input/foreman_ref_encoder_main.cfg'
+    h264ref.cmd = [h264ref.executable]
+    h264ref.cwd = bench_dir_06+h264ref_dir+'run'
+    h264ref.output = 'h264ref.out'
 
     #465.tonto
     tonto=Process()

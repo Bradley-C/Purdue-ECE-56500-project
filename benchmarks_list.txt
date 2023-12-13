@@ -2,7 +2,6 @@ gcc
 mcf
 omnetpp
 tonto
-h264ref
 sjeng
 lbm
 bzip2
