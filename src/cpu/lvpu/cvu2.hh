@@ -163,8 +163,11 @@ class ConstantVUnit : public SimObject
         /** The entry's index to clear */
         Addr pc = 0;
 
-        /** The entry's value to replace old*/
-        uint64_t value = 0;
+        /** Pointer to data written by store instruction*/
+        uint8_t *value = 0;
+
+        /** address that was written to */
+        uint64_t addr;
 
         /** Whether or not the replacement is valid. */
         bool clear = false;
@@ -178,19 +181,19 @@ class ConstantVUnit : public SimObject
      *  @param new_value The address that was loaded.
      *  @param tid The thread id.
      */
-    void updateEntry( PCStateBase &pc,
+    void updateEntry( const Addr pc,
     uint64_t new_value, ThreadID tid);
 
     /** Clears the CVU of valid entry when data addr matches a given
      *  entry for stores
      *  @param inst_pc The PC address of the store being updated.
      *  @param data_addr The address that is stored to.
-     *  @param new_addr The value that was stored.
+     *  @param new_value The value that was stored.
      *  @param tid The thread id.
      *  @return CVUReturn that tells the LVPT/LCT how to update
      */
     ConstantVUnit::CVUReturn storeClear(PCStateBase &inst_pc,
-    uint64_t data_addr, uint64_t new_addr, ThreadID tid);
+    uint64_t data_addr, uint8_t *new_value, ThreadID tid);
 
     /** Do CAM search for given PC and Load Addr, used to pass cache
      *  for loads
@@ -235,7 +238,7 @@ class ConstantVUnit : public SimObject
         PredictorHistory(const InstSeqNum &seq_num, Addr instPC,
                         std::vector<std::vector<CVUEntry>> _CVUTable,
                          ThreadID _tid, const StaticInstPtr & inst,
-                         uint64_t _data)
+                         uint8_t *_data)
             : seqNum(seq_num), pc(instPC), CVUTable(_CVUTable),
               tid(_tid), inst(inst), data(_data)
         {}
@@ -261,7 +264,7 @@ class ConstantVUnit : public SimObject
         /** Value of the load. First it is predicted, and fixed later
          *  if necessary
          */
-        uint64_t data;
+        uint8_t *data;
 
         /** The load instruction */
         const StaticInstPtr inst;

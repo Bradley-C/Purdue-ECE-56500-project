@@ -51,7 +51,7 @@ LoadValuePredictionTable::LoadValuePredictionTable(unsigned _numEntries,
         fatal("LVPT entries is not a power of 2!");
     }
 
-    LVPT.resize(numEntries);
+    lvpt.resize(numEntries);
 
     idxMask = numEntries - 1;
 }
@@ -71,24 +71,29 @@ LoadValuePredictionTable::getIndex(Addr instPC, ThreadID tid)
 // value = 0 to represent invalid entry.
 void
 LoadValuePredictionTable::lookup(const Addr inst_pc, ThreadID tid,
-                                 uint64_t &data)
+                                 lvptEntry &entry)
 {
     unsigned lvpt_idx = getIndex(inst_pc, tid);
 
     assert(lvpt_idx < numEntries);
 
-    data = LVPT[lvpt_idx].data;
+    entry = lvpt[lvpt_idx];
 }
 
 void
-LoadValuePredictionTable::update(Addr inst_pc, const uint64_t new_data,
-                                 ThreadID tid)
+LoadValuePredictionTable::update(Addr inst_pc, uint8_t *new_data,
+                                 unsigned new_size, ThreadID tid)
 {
     unsigned lvpt_idx = getIndex(inst_pc, tid);
 
     assert(lvpt_idx < numEntries);
-
-    LVPT[lvpt_idx].data = new_data;
+    // std::cout << "Index:" << lvpt_idx
+    //           << " Old LVPT Entry:" << LVPT[lvpt_idx].data
+    //           << " New Data:" << new_data;
+    lvpt[lvpt_idx].data = new_data;
+    lvpt[lvpt_idx].size = new_size;
+    // std::cout << " After assignment. New LVPT Entry:"
+    //           << LVPT[lvpt_idx].data << std::endl;
 }
 
 } // namespace branch_prediction

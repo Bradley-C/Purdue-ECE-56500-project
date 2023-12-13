@@ -43,23 +43,11 @@ namespace load_value_prediction
 class LoadValuePredictionTable
 {
   private:
-    struct LVPTEntry
-    {
-        /** The entry's data. */
-        uint64_t data;
-
-        /** The entry's thread id. */
-        ThreadID tid;
-    };
-
     /** Returns the index into the LVPT, based on the load's PC.
      *  @param inst_PC The load to look up.
      *  @return Returns the index into the LVPT.
      */
     inline unsigned getIndex(Addr instPC, ThreadID tid);
-
-    /** The actual LVPT. */
-    std::vector<LVPTEntry> LVPT;
 
     /** The number of entries in the LVPT. */
     unsigned numEntries;
@@ -74,6 +62,18 @@ class LoadValuePredictionTable
     unsigned log2NumThreads;
 
   public:
+    typedef struct lvptEntry
+    {
+        /** The entry's data. */
+        uint8_t *data;
+
+        /** size of the data */
+        unsigned size;
+
+        /** The entry's thread id. */
+        ThreadID tid;
+    } lvptEntry;
+
     /** Creates an LVPT with the given number of entries and instruction offset
      *  amount.
      *  @param numEntries Number of entries for the LVPT.
@@ -82,15 +82,20 @@ class LoadValuePredictionTable
     LoadValuePredictionTable(unsigned numEntries,
                              unsigned instShiftAmt, unsigned numThreads);
 
-    /** Get a value from an LVPT entry. */
-    void lookup(Addr inst_pc, ThreadID tid, uint64_t &data);
+    /** Get the LVPT entry. */
+    void lookup(const Addr inst_pc, ThreadID tid, lvptEntry &entry);
 
     /** Updates the LVPT with the mispredicted value of a load.
      *  @param inst_pc The address of the load being updated.
      *  @param new_data The data at the address that was loaded.
      *  @param tid The thread id.
      */
-    void update(Addr inst_pc, const uint64_t new_data, ThreadID tid);
+    void update(Addr inst_pc, uint8_t *new_data, unsigned size,
+                ThreadID tid);
+
+  private:
+    /** The actual LVPT. */
+    std::vector<lvptEntry> lvpt;
 };
 
 } // namespace load_value_prediction

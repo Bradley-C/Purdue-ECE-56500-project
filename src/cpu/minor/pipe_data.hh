@@ -186,6 +186,106 @@ std::ostream &operator <<(std::ostream &os, BranchData::Reason reason);
  *  for MinorTrace */
 std::ostream &operator <<(std::ostream &os, const BranchData &branch);
 
+class LoadData
+{
+  public:
+    enum Reason
+    {
+      /* No need to re-issue (information to load prediction). */
+      NoLoad, /* Value wasn't propagated anyways */
+      CorrectlyPredictedLoadValue,
+
+      /** Need to change sequence number (every instruction with the same
+          loadSeqNum). */
+      LoadValuePrediction,
+      BadlyPredictedLoadValue
+    };
+
+    /** Is a request with this reason actually a request to change the
+     *  PC rather than a bubble or load prediction information */
+    static bool isStreamChange(const LoadData::Reason reason);
+
+    /** Is a request with this reason actually a load */
+    static bool isLoad(const LoadData::Reason reason);
+
+  public:
+    /** Explanation for this load */
+    Reason reason = NoLoad;
+
+    /** ThreadID associated with this load */
+    ThreadID threadId = InvalidThreadID;
+
+    /** Sequence number of new load to be adopted*/
+    InstSeqNum loadSeqNum = 0;
+
+    /** Instruction which caused this load */
+    MinorDynInstPtr inst = MinorDynInst::bubble();
+
+    /** Whether the load was correctly predicted (for updating the LCT) */
+    bool correctlyPredicted;
+
+    /** load value (updated when memory reference resolves) */
+    uint8_t *loadValue = nullptr;
+
+    unsigned loadSize;
+
+    /* Load class */
+    load_value_prediction::LVPredUnit::eLoadClass loadClass;
+
+  public:
+    LoadData() {}
+
+    LoadData(Reason _reason, ThreadID thread_id, InstSeqNum _loadSeqNum,
+             load_value_prediction::LVPredUnit::Result &result, bool correct,
+             MinorDynInstPtr _inst) :
+        reason(_reason), threadId(thread_id), loadSeqNum(_loadSeqNum),
+        correctlyPredicted(correct), loadValue(result.data),
+        loadSize(result.size), loadClass(result.loadClass), inst(_inst)
+    {}
+
+    LoadData(const LoadData &other) :
+        reason(other.reason), threadId(other.threadId),
+        loadSeqNum(other.loadSeqNum), inst(other.inst),
+        correctlyPredicted(other.correctlyPredicted),
+        loadValue(other.loadValue), loadSize(other.loadSize),
+        loadClass(other.loadClass)
+    {}
+
+    LoadData &
+    operator=(const LoadData &other)
+    {
+        reason = other.reason;
+        threadId = other.threadId;
+        loadSeqNum = other.loadSeqNum;
+        inst = other.inst;
+        correctlyPredicted = other.correctlyPredicted;
+        loadValue = other.loadValue;
+        loadSize = other.loadSize;
+        loadClass = other.loadClass;
+        return *this;
+    }
+
+    /** BubbleIF interface */
+    static LoadData bubble() { return LoadData(); }
+    bool isBubble() const { return reason == NoLoad; }
+
+    /** As static isStreamChange but on this load data */
+    bool isStreamChange() const { return isStreamChange(reason); }
+
+    /** As static isLoad but on this load data */
+    bool isLoad() const { return isLoad(reason); }
+
+    /** ReportIF interface */
+    void reportData(std::ostream &os) const;
+};
+
+/** Print a load reason enum */
+std::ostream &operator <<(std::ostream &os, LoadData::Reason reason);
+
+/** Print LoadData contents in a format suitable for DPRINTF comments, not
+ *  for MinorTrace */
+std::ostream &operator <<(std::ostream &os, const LoadData &load);
+
 /** Line fetch data in the forward direction.  Contains a single cache line
  *  (or fragment of a line), its address, a sequence number assigned when
  *  that line was fetched and a bubbleFlag that can allow ForwardLineData to
@@ -290,6 +390,18 @@ const unsigned int MAX_FORWARD_INSTS = 16;
 class ForwardInstData /* : public ReportIF, public BubbleIF */
 {
   public:
+    enum LoadReason
+    {
+      /* No need to re-issue (information to load prediction). */
+      NoLoad, /* Value wasn't propagated anyways */
+      CorrectlyPredictedLoadValue,
+
+      /** Need to change sequence number (every instruction with the same
+          loadSeqNum). */
+      LoadValuePrediction,
+      BadlyPredictedLoadValue
+    };
+
     /** Array of carried insts, ref counted */
     MinorDynInstPtr insts[MAX_FORWARD_INSTS];
 
@@ -298,6 +410,20 @@ class ForwardInstData /* : public ReportIF, public BubbleIF */
 
     /** Thread associated with these instructions */
     ThreadID threadId;
+
+    /** Sequence number of new load to be adopted*/
+    InstSeqNum loadSeqNum = 0;
+
+    /** Whether the load was correctly predicted (for updating the LCT) */
+    bool correctlyPredicted;
+
+    /** load value (updated when memory reference resolves) */
+    uint8_t *loadValue = nullptr;
+
+    unsigned loadSize;
+
+    /* Load class */
+    load_value_prediction::LVPredUnit::eLoadClass loadClass;
 
     uint64_t LVPT_value;
 

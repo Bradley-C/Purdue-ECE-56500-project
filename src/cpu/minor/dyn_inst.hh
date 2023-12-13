@@ -83,6 +83,7 @@ class InstId
     static const InstSeqNum firstLineSeqNum = 1;
     static const InstSeqNum firstFetchSeqNum = 1;
     static const InstSeqNum firstExecSeqNum = 1;
+    static const InstSeqNum firstLoadSeqNum = 1;
 
   public:
     /** The thread to which this line/instruction belongs */
@@ -110,15 +111,22 @@ class InstId
      *  post-micro-op decomposed instructions. */
     InstSeqNum execSeqNum;
 
+    /** Load sequence number. Attached by Fetch2 as a consequence of load
+     *  value prediction.
+    */
+    InstSeqNum loadSeqNum;
+
   public:
     /** Very boring default constructor */
     InstId(
         ThreadID thread_id = 0, InstSeqNum stream_seq_num = 0,
         InstSeqNum prediction_seq_num = 0, InstSeqNum line_seq_num = 0,
-        InstSeqNum fetch_seq_num = 0, InstSeqNum exec_seq_num = 0) :
+        InstSeqNum fetch_seq_num = 0, InstSeqNum exec_seq_num = 0,
+        InstSeqNum load_seq_num = 0) :
         threadId(thread_id), streamSeqNum(stream_seq_num),
         predictionSeqNum(prediction_seq_num), lineSeqNum(line_seq_num),
-        fetchSeqNum(fetch_seq_num), execSeqNum(exec_seq_num)
+        fetchSeqNum(fetch_seq_num), execSeqNum(exec_seq_num),
+        loadSeqNum(load_seq_num)
     { }
 
   public:
@@ -137,7 +145,8 @@ class InstId
         /* Stream and prediction *must* match if these are the same id */
         if (ret) {
             assert(streamSeqNum == rhs.streamSeqNum &&
-                predictionSeqNum == rhs.predictionSeqNum);
+                predictionSeqNum == rhs.predictionSeqNum &&
+                loadSeqNum == rhs.loadSeqNum);
         }
 
         return ret;
@@ -191,6 +200,17 @@ class MinorDynInst : public RefCounted
 
     /** Predicted branch target */
     std::unique_ptr<PCStateBase> predictedTarget;
+
+    /** Tried to predict the destination of this inst (if a load
+     *  instruction) */
+    bool triedToPredictLoadValue = false;
+
+    /** This load instruction was predicted and the following instructions will
+     *  have a newer loadSeqNum */
+    bool loadValuePredicted = false;
+
+    /** Predicted load value */
+    uint8_t *predictedLoadValue;
 
     /** Fields only set during execution */
 

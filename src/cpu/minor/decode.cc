@@ -54,11 +54,15 @@ Decode::Decode(const std::string &name,
     const BaseMinorCPUParams &params,
     Latch<ForwardInstData>::Output inp_,
     Latch<ForwardInstData>::Input out_,
+    Latch<LoadData>::Output lvpInp_,
+    Latch<LoadData>::Input lvpOut_,
     std::vector<InputBuffer<ForwardInstData>> &next_stage_input_buffer) :
     Named(name),
     cpu(cpu_),
     inp(inp_),
     out(out_),
+    lvpInp(lvpInp_),
+    lvpOut(lvpOut_),
     nextStageReserve(next_stage_input_buffer),
     outputWidth(params.executeInputWidth),
     processMoreThanOneInput(params.decodeCycleInput),
@@ -79,6 +83,10 @@ Decode::Decode(const std::string &name,
             InputBuffer<ForwardInstData>(
                 name + ".inputBuffer" + std::to_string(tid), "insts",
                 params.decodeInputBufferSize));
+        // lvpInputBuffer.push_back(
+        //     InputBuffer<LoadData>(
+        //         name + ".lvpInputBuffer" + std::to_string(tid), "loadPreds",
+        //         params.decodeInputBufferSize));
     }
 }
 
@@ -104,6 +112,28 @@ Decode::popInput(ThreadID tid)
     decodeInfo[tid].inputIndex = 0;
     decodeInfo[tid].inMacroop = false;
 }
+
+// const LoadData *
+// Decode::getLVPInput(ThreadID tid)
+// {
+//     /* Get insts from the inputBuffer to work with */
+//     if (!lvpInputBuffer[tid].empty()) {
+//         const LoadData &head = lvpInputBuffer[tid].front();
+
+//         return (head.isBubble() ? NULL : &(lvpInputBuffer[tid].front()));
+//     } else {
+//         return NULL;
+//     }
+// }
+
+// void
+// Decode::popLVPInput(ThreadID tid)
+// {
+//     if (!lvpInputBuffer[tid].empty())
+//         lvpInputBuffer[tid].pop();
+
+//     decodeInfo[tid].lvpInputIndex = 0;
+// }
 
 #if TRACING_ON
 /** Add the tracing data to an instruction.  This originates in
@@ -131,6 +161,9 @@ Decode::evaluate1()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -296,7 +329,10 @@ Decode::evaluate1()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
 }
 #else
 void
@@ -470,6 +506,7 @@ Decode::evaluate()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
 }
 #endif
 
@@ -480,6 +517,9 @@ Decode::evaluate2()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -645,7 +685,10 @@ Decode::evaluate2()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode2 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -657,6 +700,9 @@ Decode::evaluate3()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -822,7 +868,10 @@ Decode::evaluate3()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode3 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -834,6 +883,9 @@ Decode::evaluate4()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -999,7 +1051,10 @@ Decode::evaluate4()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode4 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -1011,6 +1066,9 @@ Decode::evaluate5()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -1176,7 +1234,10 @@ Decode::evaluate5()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode5 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -1188,6 +1249,9 @@ Decode::evaluate6()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -1353,7 +1417,10 @@ Decode::evaluate6()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode6 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -1365,6 +1432,9 @@ Decode::evaluate7()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -1530,7 +1600,10 @@ Decode::evaluate7()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode7 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -1542,6 +1615,9 @@ Decode::evaluate8()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -1707,7 +1783,10 @@ Decode::evaluate8()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode8 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -1719,6 +1798,9 @@ Decode::evaluate9()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -1884,7 +1966,10 @@ Decode::evaluate9()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode9 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -1896,6 +1981,9 @@ Decode::evaluate10()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -2061,7 +2149,10 @@ Decode::evaluate10()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode10 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -2073,6 +2164,9 @@ Decode::evaluate11()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -2238,7 +2332,10 @@ Decode::evaluate11()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode11 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -2251,6 +2348,9 @@ Decode::evaluate12()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -2416,7 +2516,10 @@ Decode::evaluate12()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode12 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -2428,6 +2531,9 @@ Decode::evaluate13()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -2593,7 +2699,10 @@ Decode::evaluate13()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode13 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -2605,6 +2714,9 @@ Decode::evaluate14()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+      //*lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -2770,7 +2882,10 @@ Decode::evaluate14()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode14 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -2782,6 +2897,9 @@ Decode::evaluate15()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+    // *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -2947,7 +3065,10 @@ Decode::evaluate15()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode15 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 
@@ -2959,6 +3080,9 @@ Decode::evaluate16()
     /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+    // if (inp->outputWire.inst->staticInst->isLoad())
+    //     lvpInputBuffer[lvpInp.outputWire->threadId].setTail(
+    //       *lvpInp.outputWire);
 
     ForwardInstData &insts_out = *out.inputWire;
 
@@ -3124,7 +3248,10 @@ Decode::evaluate16()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
+    if (inp->outputWire.inst->staticInst->isLoad())
+        lvpInputBuffer[lvpInp.outputWire->threadId].pushTail();
+    lvpOut.inputWire = lvpInp.outputWire;
+    // out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
     // std::cout << "Value in LVPT at Decode16 Stage: "
     // << inp.outputWire->LVPT_value << std::endl;
 

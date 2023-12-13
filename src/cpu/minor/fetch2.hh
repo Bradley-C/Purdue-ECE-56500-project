@@ -80,6 +80,13 @@ class Fetch2 : public Named
     /** Output port carrying predictions back to Fetch1 */
     Latch<BranchData>::Input predictionOut;
 
+    /** Input port carrying loads from Execute.  This is a snoop of the
+     *  data provided to F1. */
+    Latch<LoadData>::Output lvpInp;
+
+    /** Output port carrying load value predictions back to Decode */
+    Latch<LoadData>::Input lvpOut;
+
     /** Output port carrying instructions into Decode */
     Latch<ForwardInstData>::Input out;
 
@@ -96,8 +103,8 @@ class Fetch2 : public Named
     /** Branch predictor passed from Python configuration */
     branch_prediction::BPredUnit &branchPredictor;
 
-    /** Branch predictor passed from Python configuration */
-    load_value_prediction::LVPredUnit &lVPred;
+    /** Load value predictor passed from Python configuration */
+    load_value_prediction::LVPredUnit &loadValuePredictor;
 
   public:
     /* Public so that Pipeline can pass it to Fetch1 */
@@ -116,6 +123,7 @@ class Fetch2 : public Named
             lastStreamSeqNum(other.lastStreamSeqNum),
             expectedStreamSeqNum(other.expectedStreamSeqNum),
             predictionSeqNum(other.predictionSeqNum),
+            loadSeqNum(other.loadSeqNum),
             blocked(other.blocked)
         {
             set(pc, other.pc);
@@ -158,6 +166,11 @@ class Fetch2 : public Named
          *  prediction in Fetch2. */
         InstSeqNum predictionSeqNum = InstId::firstPredictionSeqNum;
 
+        /** Fetch2 is the source of load sequence numbers. These represent
+         *  sequences that use values derived from a load prediction in
+         *  Fetch2. */
+        InstSeqNum loadSeqNum = InstId::firstLoadSeqNum;
+
         /** Blocked indication for report */
         bool blocked = false;
     };
@@ -185,7 +198,7 @@ class Fetch2 : public Named
     /** Pop an element off the input buffer, if there are any */
     void popInput(ThreadID tid);
 
-    /** Dump the whole contents of the input buffer.  Useful after a
+    /** Dump the whole contents of the input buffer. Useful after a
      *  prediction changes control flow */
     void dumpAllInput(ThreadID tid);
 
@@ -198,6 +211,15 @@ class Fetch2 : public Named
      *  carries the prediction to Fetch1 */
     void predictBranch(MinorDynInstPtr inst, BranchData &branch);
 
+    /** Update local load prediction structures with feedback from
+     *  Execute. */
+    void updateLoadValuePrediction(const LoadData &load);
+
+    /** Predicts load value for the given instruction. Updates the
+     *  instruction's lvpu... fields and also the load which
+     *  carries the prediction to Fetch1 */
+    void predictLoadValue(MinorDynInstPtr inst, LoadData &load);
+
     /** Use the current threading policy to determine the next thread to
      *  fetch from. */
     ThreadID getScheduledThread();
@@ -208,8 +230,10 @@ class Fetch2 : public Named
         const BaseMinorCPUParams &params,
         Latch<ForwardLineData>::Output inp_,
         Latch<BranchData>::Output branchInp_,
+        Latch<LoadData>::Output lvpInp_,
         Latch<BranchData>::Input predictionOut_,
         Latch<ForwardInstData>::Input out_,
+        Latch<LoadData>::Input lvpOut_,
         std::vector<InputBuffer<ForwardInstData>> &next_stage_input_buffer);
 
   public:

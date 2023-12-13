@@ -97,7 +97,7 @@ class LVPredUnit : public SimObject
     /** Mask to get index bits. */
     const unsigned lctIndexMask;
 
-  protected:
+  // protected:
     /**
      * Looks up a given PC in the LVPT to get the predicted value. The PC may
      * be changed or deleted in the future, so it needs to be used immediately,
@@ -106,9 +106,10 @@ class LVPredUnit : public SimObject
      * @return The value at the address of the load.
      */
     void
-    lvptLookup(const Addr inst_pc, const ThreadID tid, uint64_t &data)
+    lvptLookup(const Addr inst_pc, const ThreadID tid,
+          load_value_prediction::LoadValuePredictionTable::lvptEntry &entry)
     {
-        LVPT.lookup(inst_pc, tid, data);
+        LVPT.lookup(inst_pc, tid, entry);
     }
 
     /**
@@ -117,9 +118,9 @@ class LVPredUnit : public SimObject
      * @param value The load's value that will be added to the LVPT.
      */
     void
-    lvptUpdate(Addr instPC, const uint64_t value)
+    lvptUpdate(Addr instPC, uint8_t *data, unsigned size, ThreadID tid)
     {
-        LVPT.update(instPC, value, 0);
+        LVPT.update(instPC, data, size, tid);
     }
 
     /**
@@ -164,6 +165,13 @@ class LVPredUnit : public SimObject
         Constant
     } eLoadClass;
 
+    typedef struct Result
+    {
+        uint8_t *data;
+        unsigned size;
+        eLoadClass loadClass;
+    } Result;
+
     /**
      *  Returns the predictability of the load given the value of the
      *  LCT entry.
@@ -182,11 +190,11 @@ class LVPredUnit : public SimObject
      * @param result The load class and lvpt entry are passed back through this
      * parameter.
      * @param tid The thread id.
-     * @return Returns whether the lvpt entry is predictable.
+     * @return Returns a Result data structure.
      */
-    eLoadClass
+    Result
     getPrediction(const StaticInstPtr &inst, const InstSeqNum &loadSeqNum,
-                  PCStateBase &pc, uint64_t &data, ThreadID tid);
+                  PCStateBase &pc, ThreadID tid);
 
     typedef LoadValuePredictorParams Params;
     /**
@@ -200,12 +208,13 @@ class LVPredUnit : public SimObject
     void drainSanityCheck() const;
 
     /**
-     * Tells the branch predictor to commit any updates until the given
+     * Tells the load predictor to commit any updates until the given
      * sequence number.
      * @param done_sn The sequence number to commit any older updates up until.
      * @param tid The thread id.
      */
-    void update(const InstSeqNum &done_sn, uint64_t corrData, ThreadID tid);
+    void update(const InstSeqNum &done_sn, const bool correct,
+                uint8_t *corrData, unsigned size, ThreadID tid);
 
     /**
      * Squashes all outstanding updates until a given sequence number.
@@ -214,6 +223,17 @@ class LVPredUnit : public SimObject
      * @param tid The thread id.
      */
     void squash(const InstSeqNum &squashed_sn, ThreadID tid);
+
+    /**
+     * Squashes all outstanding updates until a given sequence number, and
+     * corrects that sn's update with the proper value.
+     * @param squashed_sn The sequence number to squash any younger updates up
+     * until.
+     * @param corr_value The correct load value.
+     * @param tid The thread id.
+     */
+    void squash(const InstSeqNum &squashed_sn, uint8_t *corr_value,
+                unsigned corr_size, ThreadID tid);
 
     void dump();
 
@@ -225,16 +245,15 @@ class LVPredUnit : public SimObject
          * information needed to update the predictor and LVPT.
          */
         PredictorHistory(const InstSeqNum &load_seq_num, Addr instPC,
-                         eLoadClass _loadClass, ThreadID _tid,
-                         const StaticInstPtr & inst, uint64_t _data)
-            : loadSeqNum(load_seq_num), pc(instPC), loadClass(_loadClass),
-              tid(_tid), inst(inst), data(_data)
+                         ThreadID _tid, const StaticInstPtr & inst,
+                         Result _result)
+            : loadSeqNum(load_seq_num), pc(instPC), tid(_tid), inst(inst),
+              result(_result)
         {}
 
         PredictorHistory(const PredictorHistory &other) :
-            loadSeqNum(other.loadSeqNum), pc(other.pc),
-            loadClass(other.loadClass), tid(other.tid), inst(other.inst),
-            data(other.data)
+            loadSeqNum(other.loadSeqNum), pc(other.pc), tid(other.tid),
+            inst(other.inst), result(other.result)
         {}
 
         bool
@@ -249,16 +268,13 @@ class LVPredUnit : public SimObject
         /** The PC associated with the sequence number. */
         Addr pc;
 
-        /** Value of the load. First it is predicted, and fixed later
-         *  if necessary
+        /** Result of the load prediction. First it is predicted, and fixed
+         *  later if necessary
          */
-        uint64_t data;
+        Result result;
 
         /** The load instruction */
         const StaticInstPtr inst;
-
-        /** The load classification*/
-        eLoadClass loadClass;
 
         /** The thread id. */
         ThreadID tid;

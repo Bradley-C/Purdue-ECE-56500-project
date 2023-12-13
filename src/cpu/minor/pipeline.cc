@@ -65,77 +65,130 @@ Pipeline::Pipeline(MinorCPU &cpu_, const BaseMinorCPUParams &params) :
         params.fetch1ToFetch2BackwardDelay, true),
     f2ToD(cpu.name() + ".f2ToD", "insts",
         params.fetch2ToDecodeForwardDelay),
+    lvpuF2ToD(cpu.name() + ".lvpuF2ToD", "insts",
+        params.fetch2ToDecodeForwardDelay),
     dToD2(cpu.name() + ".dToD2", "insts",
+        params.fetch2ToDecodeForwardDelay),
+    lvpuDToD2(cpu.name() + ".lvpuDToD2", "loadPred",
         params.fetch2ToDecodeForwardDelay),
     d2ToD3(cpu.name() + ".d2ToD3", "insts",
         params.fetch2ToDecodeForwardDelay),
+    lvpuD2ToD3(cpu.name() + ".lvpuD2ToD3", "loadPred",
+        params.fetch2ToDecodeForwardDelay),
     d3ToD4(cpu.name() + ".d3ToD4", "insts",
+        params.fetch2ToDecodeForwardDelay),
+    lvpuD3ToD4(cpu.name() + ".lvpuD3ToD4", "loadPred",
         params.fetch2ToDecodeForwardDelay),
     d4ToD5(cpu.name() + ".d4ToD5", "insts",
         params.fetch2ToDecodeForwardDelay),
+    lvpuD4ToD5(cpu.name() + ".lvpuD4ToD5", "loadPred",
+        params.fetch2ToDecodeForwardDelay),
     d5ToD6(cpu.name() + ".d5ToD6", "insts",
+        params.fetch2ToDecodeForwardDelay),
+    lvpuD5ToD6(cpu.name() + ".lvpuD5ToD6", "loadPred",
         params.fetch2ToDecodeForwardDelay),
     d6ToD7(cpu.name() + ".d6ToD7", "insts",
         params.fetch2ToDecodeForwardDelay),
+    lvpuD6ToD7(cpu.name() + ".lvpuD6ToD7", "loadPred",
+        params.fetch2ToDecodeForwardDelay),
     d7ToD8(cpu.name() + ".d7ToD8", "insts",
+        params.fetch2ToDecodeForwardDelay),
+    lvpuD7ToD8(cpu.name() + ".lvpuD7ToD8", "loadPred",
         params.fetch2ToDecodeForwardDelay),
     d8ToD9(cpu.name() + ".d8ToD9", "insts",
         params.fetch2ToDecodeForwardDelay),
+    lvpuD8ToD9(cpu.name() + ".lvpuD8ToD9", "loadPred",
+        params.fetch2ToDecodeForwardDelay),
     d9ToD10(cpu.name() + ".d9ToD10", "insts",
+        params.fetch2ToDecodeForwardDelay),
+    lvpuD9ToD10(cpu.name() + ".lvpuD0ToD10", "loadPred",
         params.fetch2ToDecodeForwardDelay),
     d10ToD11(cpu.name() + ".d10ToD11", "insts",
         params.fetch2ToDecodeForwardDelay),
+    lvpuD10ToD11(cpu.name() + ".lvpuD10ToD11", "loadPred",
+        params.fetch2ToDecodeForwardDelay),
     d11ToD12(cpu.name() + ".d11ToD12", "insts",
+        params.fetch2ToDecodeForwardDelay),
+    lvpuD11ToD12(cpu.name() + ".lvpuD11ToD12", "loadPred",
         params.fetch2ToDecodeForwardDelay),
     d12ToD13(cpu.name() + ".d12ToD13", "insts",
         params.fetch2ToDecodeForwardDelay),
+    lvpuD12ToD13(cpu.name() + ".lvpuD12ToD13", "loadPred",
+        params.fetch2ToDecodeForwardDelay),
     d13ToD14(cpu.name() + ".d13ToD14", "insts",
+        params.fetch2ToDecodeForwardDelay),
+    lvpuD13ToD14(cpu.name() + ".lvpuD13ToD14", "loadPred",
         params.fetch2ToDecodeForwardDelay),
     d14ToD15(cpu.name() + ".d14ToD15", "insts",
         params.fetch2ToDecodeForwardDelay),
+    lvpuD14ToD15(cpu.name() + ".lvpuD14ToD15", "loadPred",
+        params.fetch2ToDecodeForwardDelay),
     d15ToD16(cpu.name() + ".d15ToD16", "insts",
+        params.fetch2ToDecodeForwardDelay),
+    lvpuD15ToD16(cpu.name() + ".lvpuD15ToD16", "loadPred",
         params.fetch2ToDecodeForwardDelay),
     d16ToE(cpu.name() + ".d16ToE", "insts",
         params.decodeToExecuteForwardDelay),
+    lvpuD16ToE(cpu.name() + ".lvpuD16ToE", "loadPred",
+        params.decodeToExecuteForwardDelay),
     eToF1(cpu.name() + ".eToF1", "branch",
         params.executeBranchDelay),
+    lvpuEToF2(cpu.name() + ".lvpuEToF2", "loadPred",
+        params.executeBranchDelay),
     execute(cpu.name() + ".execute", cpu, params,
-        d16ToE.output(), eToF1.input()),
+        d16ToE.output(), eToF1.input(),
+        lvpuD16ToE.output(), lvpuEToF2.input()),
     decode16(cpu.name() + ".decode16", cpu, params,
-        d15ToD16.output(), d16ToE.input(), execute.inputBuffer),
+        d15ToD16.output(), d16ToE.input(),
+        lvpuD15ToD16.output(), lvpuD16ToE.input(), execute.inputBuffer),
     decode15(cpu.name() + ".decode15", cpu, params,
-        d14ToD15.output(), d15ToD16.input(), decode16.inputBuffer),
+        d14ToD15.output(), d15ToD16.input(),
+        lvpuD14ToD15.output(), lvpuD15ToD16.input(), decode16.inputBuffer),
     decode14(cpu.name() + ".decode14", cpu, params,
-        d13ToD14.output(), d14ToD15.input(), decode15.inputBuffer),
+        d13ToD14.output(), d14ToD15.input(),
+        lvpuD13ToD14.output(), lvpuD14ToD15.input(), decode15.inputBuffer),
     decode13(cpu.name() + ".decode13", cpu, params,
-        d12ToD13.output(), d13ToD14.input(), decode14.inputBuffer),
+        d12ToD13.output(), d13ToD14.input(),
+        lvpuD12ToD13.output(), lvpuD13ToD14.input(), decode14.inputBuffer),
     decode12(cpu.name() + ".decode12", cpu, params,
-        d11ToD12.output(), d12ToD13.input(), decode13.inputBuffer),
+        d11ToD12.output(), d12ToD13.input(),
+        lvpuD11ToD12.output(), lvpuD12ToD13.input(), decode13.inputBuffer),
     decode11(cpu.name() + ".decode11", cpu, params,
-        d10ToD11.output(), d11ToD12.input(), decode12.inputBuffer),
+        d10ToD11.output(), d11ToD12.input(),
+        lvpuD10ToD11.output(), lvpuD11ToD12.input(), decode12.inputBuffer),
     decode10(cpu.name() + ".decode10", cpu, params,
-        d9ToD10.output(), d10ToD11.input(), decode11.inputBuffer),
+        d9ToD10.output(), d10ToD11.input(),
+        lvpuD9ToD10.output(), lvpuD10ToD11.input(), decode11.inputBuffer),
     decode9(cpu.name() + ".decode9", cpu, params,
-        d8ToD9.output(), d9ToD10.input(), decode10.inputBuffer),
+        d8ToD9.output(), d9ToD10.input(),
+        lvpuD8ToD9.output(), lvpuD9ToD10.input(), decode10.inputBuffer),
     decode8(cpu.name() + ".decode8", cpu, params,
-        d7ToD8.output(), d8ToD9.input(), decode9.inputBuffer),
+        d7ToD8.output(), d8ToD9.input(),
+        lvpuD7ToD8.output(), lvpuD8ToD9.input(), decode9.inputBuffer),
     decode7(cpu.name() + ".decode7", cpu, params,
-        d6ToD7.output(), d7ToD8.input(), decode8.inputBuffer),
+        d6ToD7.output(), d7ToD8.input(),
+        lvpuD6ToD7.output(), lvpuD7ToD8.input(), decode8.inputBuffer),
     decode6(cpu.name() + ".decode6", cpu, params,
-        d5ToD6.output(), d6ToD7.input(), decode7.inputBuffer),
+        d5ToD6.output(), d6ToD7.input(),
+        lvpuD5ToD6.output(), lvpuD6ToD7.input(), decode7.inputBuffer),
     decode5(cpu.name() + ".decode5", cpu, params,
-        d4ToD5.output(), d5ToD6.input(), decode6.inputBuffer),
+        d4ToD5.output(), d5ToD6.input(),
+        lvpuD4ToD5.output(), lvpuD5ToD6.input(), decode6.inputBuffer),
     decode4(cpu.name() + ".decode4", cpu, params,
-        d3ToD4.output(), d4ToD5.input(), decode5.inputBuffer),
+        d3ToD4.output(), d4ToD5.input(),
+        lvpuD3ToD4.output(), lvpuD4ToD5.input(), decode5.inputBuffer),
     decode3(cpu.name() + ".decode3", cpu, params,
-        d2ToD3.output(), d3ToD4.input(), decode4.inputBuffer),
+        d2ToD3.output(), d3ToD4.input(),
+        lvpuD2ToD3.output(), lvpuD3ToD4.input(), decode4.inputBuffer),
     decode2(cpu.name() + ".decode2", cpu, params,
-        dToD2.output(), d2ToD3.input(), decode3.inputBuffer),
+        dToD2.output(), d2ToD3.input(),
+        lvpuDToD2.output(), lvpuD2ToD3.input(), decode3.inputBuffer),
     decode(cpu.name() + ".decode", cpu, params,
-        f2ToD.output(), dToD2.input(), decode2.inputBuffer),
+        f2ToD.output(), dToD2.input(),
+        lvpuF2ToD.output(), lvpuDToD2.input(), decode2.inputBuffer),
     fetch2(cpu.name() + ".fetch2", cpu, params,
-        f1ToF2.output(), eToF1.output(), f2ToF1.input(), f2ToD.input(),
-        decode.inputBuffer),
+        f1ToF2.output(), eToF1.output(), lvpuEToF2.output(),
+        f2ToF1.input(), f2ToD.input(), lvpuF2ToD.input(), decode.inputBuffer),
     fetch1(cpu.name() + ".fetch1", cpu, params,
         eToF1.output(), f1ToF2.input(), f2ToF1.output(), fetch2.inputBuffer),
     activityRecorder(cpu.name() + ".activity", Num_StageId,
@@ -192,16 +245,25 @@ Pipeline::Pipeline(MinorCPU &cpu_, const BaseMinorCPUParams &params) :
         params.fetch1ToFetch2BackwardDelay, true),
     f2ToD(cpu.name() + ".f2ToD", "insts",
         params.fetch2ToDecodeForwardDelay),
+    lvpuF2ToD(cpu.name() + ".lvpuF2ToD", "loadPred",
+        params.fetch2ToDecodeForwardDelay),
     dToE(cpu.name() + ".dToE", "insts",
+        params.decodeToExecuteForwardDelay),
+    lvpuDToE(cpu.name() + ".lvpuDToE", "loadPred",
         params.decodeToExecuteForwardDelay),
     eToF1(cpu.name() + ".eToF1", "branch",
         params.executeBranchDelay),
+    lvpuEToF2(cpu.name() + ".lvpuEToF2", "loadResult",
+        params.executeBranchDelay),
     execute(cpu.name() + ".execute", cpu, params,
-        dToE.output(), eToF1.input()),
+        dToE.output(), eToF1.input(),
+        lvpuDToE.output(), lvpuEToF2.input()),
     decode(cpu.name() + ".decode", cpu, params,
-        f2ToD.output(), dToE.input(), execute.inputBuffer),
+        f2ToD.output(), dToE.input(),
+        lvpuF2ToD.output(), lvpuDToE.input(), execute.inputBuffer),
     fetch2(cpu.name() + ".fetch2", cpu, params,
-        f1ToF2.output(), eToF1.output(), f2ToF1.input(), f2ToD.input(),
+        f1ToF2.output(), eToF1.output(), lvpuEToF2.output(),
+        f2ToF1.input(), f2ToD.input(), lvpuF2ToD.input(),
         decode.inputBuffer),
     fetch1(cpu.name() + ".fetch1", cpu, params,
         eToF1.output(), f1ToF2.input(), f2ToF1.output(), fetch2.inputBuffer),
@@ -244,40 +306,58 @@ Pipeline::minorTrace() const
     f2ToF1.minorTrace();
     fetch2.minorTrace();
     f2ToD.minorTrace();
+    lvpuF2ToD.minorTrace();
     decode.minorTrace();
     dToD2.minorTrace();
+    lvpuDToD2.minorTrace();
     decode2.minorTrace();
     d2ToD3.minorTrace();
+    lvpuD2ToD3.minorTrace();
     decode3.minorTrace();
     d3ToD4.minorTrace();
+    lvpuD3ToD4.minorTrace();
     decode4.minorTrace();
     d4ToD5.minorTrace();
+    lvpuD4ToD5.minorTrace();
     decode5.minorTrace();
     d5ToD6.minorTrace();
+    lvpuD5ToD6.minorTrace();
     decode6.minorTrace();
     d6ToD7.minorTrace();
+    lvpuD6ToD7.minorTrace();
     decode7.minorTrace();
     d7ToD8.minorTrace();
+    lvpuD7ToD8.minorTrace();
     decode8.minorTrace();
     d8ToD9.minorTrace();
+    lvpuD8ToD9.minorTrace();
     decode9.minorTrace();
     d9ToD10.minorTrace();
+    lvpuD9ToD10.minorTrace();
     decode10.minorTrace();
     d10ToD11.minorTrace();
+    lvpuD10ToD11.minorTrace();
     decode11.minorTrace();
     d11ToD12.minorTrace();
+    lvpuD11ToD12.minorTrace();
     decode12.minorTrace();
     d12ToD13.minorTrace();
+    lvpuD12ToD13.minorTrace();
     decode13.minorTrace();
     d13ToD14.minorTrace();
+    lvpuD13ToD14.minorTrace();
     decode14.minorTrace();
     d14ToD15.minorTrace();
+    lvpuD14ToD15.minorTrace();
     decode15.minorTrace();
     d15ToD16.minorTrace();
+    lvpuD15ToD16.minorTrace();
     decode16.minorTrace();
     d16ToE.minorTrace();
+    lvpuD16ToE.minorTrace();
     execute.minorTrace();
     eToF1.minorTrace();
+    lvpuEToF2.minorTrace();
     activityRecorder.minorTrace();
 }
 #else
@@ -289,10 +369,13 @@ Pipeline::minorTrace() const
     f2ToF1.minorTrace();
     fetch2.minorTrace();
     f2ToD.minorTrace();
+    lvpuF2ToD.minorTrace();
     decode.minorTrace();
     dToE.minorTrace();
+    lvpuDToE.minorTrace();
     execute.minorTrace();
     eToF1.minorTrace();
+    lvpuEToF2.minorTrace();
     activityRecorder.minorTrace();
 }
 #endif
@@ -334,23 +417,41 @@ Pipeline::evaluate()
     f1ToF2.evaluate();
     f2ToF1.evaluate();
     f2ToD.evaluate();
+    lvpuF2ToD.evaluate();
     dToD2.evaluate();
+    lvpuDToD2.evaluate();
     d2ToD3.evaluate();
+    lvpuD2ToD3.evaluate();
     d3ToD4.evaluate();
+    lvpuD3ToD4.evaluate();
     d4ToD5.evaluate();
+    lvpuD4ToD5.evaluate();
     d5ToD6.evaluate();
+    lvpuD5ToD6.evaluate();
     d6ToD7.evaluate();
+    lvpuD6ToD7.evaluate();
     d7ToD8.evaluate();
+    lvpuD7ToD8.evaluate();
     d8ToD9.evaluate();
+    lvpuD8ToD9.evaluate();
     d9ToD10.evaluate();
+    lvpuD9ToD10.evaluate();
     d10ToD11.evaluate();
+    lvpuD10ToD11.evaluate();
     d11ToD12.evaluate();
+    lvpuD11ToD12.evaluate();
     d12ToD13.evaluate();
+    lvpuD12ToD13.evaluate();
     d13ToD14.evaluate();
+    lvpuD13ToD14.evaluate();
     d14ToD15.evaluate();
+    lvpuD14ToD15.evaluate();
     d15ToD16.evaluate();
+    lvpuD15ToD16.evaluate();
     d16ToE.evaluate();
+    lvpuD16ToE.evaluate();
     eToF1.evaluate();
+    lvpuEToF2.evaluate();
 
     /* The activity recorder must be be called after all the stages and
      *  before the idler (which acts on the advice of the activity recorder */
@@ -422,7 +523,10 @@ Pipeline::evaluate()
     f1ToF2.evaluate();
     f2ToF1.evaluate();
     f2ToD.evaluate();
+    lvpuF2ToD.evaluate();
     dToE.evaluate();
+    lvpuDToE.evaluate();
+    lvpuEToF2.evaluate();
     eToF1.evaluate();
 
     /* The activity recorder must be be called after all the stages and
@@ -625,12 +729,15 @@ Pipeline::isDrained()
     bool f1_to_f2_drained = f1ToF2.empty();
     bool f2_to_f1_drained = f2ToF1.empty();
     bool f2_to_d_drained = f2ToD.empty();
+    bool lvpu_f2_to_d_drained = lvpuF2ToD.empty();
     bool d_to_e_drained = dToE.empty();
+    bool lvpu_d_to_e_drained = lvpuDToE.empty();
 
     bool ret = fetch1_drained && fetch2_drained &&
         decode_drained && execute_drained &&
         f1_to_f2_drained && f2_to_f1_drained &&
-        f2_to_d_drained && d_to_e_drained;
+        f2_to_d_drained && d_to_e_drained &&
+        lvpu_f2_to_d_drained && lvpu_d_to_e_drained;
 
     DPRINTF(MinorCPU, "Pipeline undrained stages state:%s%s%s%s%s%s%s%s\n",
         (fetch1_drained ? "" : " Fetch1"),
