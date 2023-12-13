@@ -147,10 +147,10 @@ ConstantVUnit::checkValid(Addr instPC, ThreadID tid)
 }
 
 void
-ConstantVUnit::updateEntry(const Addr pc,
+ConstantVUnit::updateEntry(PCStateBase &pc,
 uint64_t new_value, ThreadID tid)
 {
-    unsigned cvu_idx = getIndexCVU( pc, tid);
+    unsigned cvu_idx = getIndexCVU( pc.instAddr(), tid);
 
     assert(cvu_idx < numEntries);
 
@@ -167,14 +167,14 @@ uint64_t new_value, ThreadID tid)
 
 ConstantVUnit::CVUReturn
 ConstantVUnit::storeClear(PCStateBase &inst_pc,
- uint64_t store_addr, uint8_t *new_value, ThreadID tid){
+ uint64_t store_addr, uint64_t new_value, ThreadID tid){
     CVUReturn return_data;
     unsigned cvu_idx = getIndexCVU(inst_pc.instAddr(), tid);
     assert(cvu_idx < numEntries);
     ++stats.cvuStoreLookups;
 
     return_data = (CVUReturn){.pc=inst_pc.instAddr(),
-    .value=nullptr,
+    .value=cvu[cvu_idx][0].value,
     .clear=false, .update=false};
     for (unsigned i = 0; i < numEntries; i++) {
         for (unsigned j = 0; j < numAddrperEntry; j++) {
@@ -205,13 +205,13 @@ ThreadID tid) {
     ++stats.cvuLoadLookups;
 
     CVUReturn return_data;
-    return_data = (CVUReturn){.pc=inst_pc.instAddr(), .addr=data_addr,
+    return_data = (CVUReturn){.pc=inst_pc.instAddr(), .value=data_addr,
     .clear=true, .update=true};
     for (unsigned j = 0; j < numAddrperEntry; j++) {
         if (cvu[cvu_idx][j].value == data_addr && cvu[cvu_idx][j].valid){
             // Figure out how to pass value being stored to here as
             // well
-            return_data = (CVUReturn){.pc=inst_pc.instAddr(), .addr=data_addr,
+            return_data = (CVUReturn){.pc=inst_pc.instAddr(), .value=data_addr,
             .clear=false, .update=true};
         }
     }
@@ -227,8 +227,8 @@ ConstantVUnit::update(const InstSeqNum &done_sn, uint64_t new_value,
     int i =0;/*
     while (!predHist[tid].empty() && predHist[tid].back().seqNum <= done_sn) {
 
-        updateEntry(predHist[tid].back().pc, new_value ,tid);
-        update(done_sn, new_value, tid);
+        updateEntry(PredHist[tid].back().pc, new_value ,tid);
+        CVU.update(PredHist[tid].back().pc, new_value, tid);
         predHist[tid].pop_back();
     }*/
 }

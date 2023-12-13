@@ -21,14 +21,3 @@ class LoadValuePredictor(SimObject):
     #                                      "Constant Verification Unit")
     # lvpt = Param.LoadValuePredictionTable(LoadValuePredictionTable(),
     #                                      "Load Value Prediction Table")
-
-
-class ConstantVerificationUnit(SimObject):
-    type = 'ConstantVerificationUnit'
-    cxx_class = 'gem5::load_value_prediction::ConstantVUnit'
-    cxx_header = "cpu/lvpu/cvu2.hh"
-    numThreads = Param.Unsigned(Parent.numThreads, "Number of threads")
-    CVUEntries = Param.Unsigned(1024, "Number of CVU entries")
-    numAddrHold = Param.Unsigned(1, "Number of data address per entry")
-    CVUTagSize = Param.Unsigned(32, "Size of the CVU tags, in bits")
-    instShiftAmt = Param.Unsigned(64-10, "Number of bits to shift ints by")

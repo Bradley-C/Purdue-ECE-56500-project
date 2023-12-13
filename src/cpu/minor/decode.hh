@@ -75,14 +75,8 @@ class Decode : public Named
     /** Output port carrying micro-op decomposed instructions to Execute */
     Latch<ForwardInstData>::Input out;
 
-    /** Input port carrying load value prediction data from Fetch2 */
-    Latch<LoadData>::Output lvpInp;
-    /** Output port carrying load value prediction data to D+ and Execute */
-    Latch<LoadData>::Input lvpOut;
-
     /** Interface to reserve space in the next stage */
     std::vector<InputBuffer<ForwardInstData>> &nextStageReserve;
-    std::vector<InputBuffer<LoadData>> &lvpNextStageReserve;
 
     /** Width of output of this stage/input of next in instructions */
     unsigned int outputWidth;
@@ -94,7 +88,6 @@ class Decode : public Named
   public:
     /* Public for Pipeline to be able to pass it to Fetch2 */
     std::vector<InputBuffer<ForwardInstData>> inputBuffer;
-    std::vector<InputBuffer<LoadData>> lvpInputBuffer;
 
   protected:
     /** Data members after this line are cycle-to-cycle state */
@@ -105,7 +98,6 @@ class Decode : public Named
 
         DecodeThreadInfo(const DecodeThreadInfo& other) :
             inputIndex(other.inputIndex),
-            lvpInputIndex(other.lvpInputIndex),
             inMacroop(other.inMacroop),
             execSeqNum(other.execSeqNum),
             blocked(other.blocked)
@@ -117,9 +109,6 @@ class Decode : public Named
         /** Index into the inputBuffer's head marking the start of unhandled
          *  instructions */
         unsigned int inputIndex = 0;
-
-        /** Index into the lvpInputBuffer's head */
-        unsigned int lvpInputIndex = 0;
 
         /** True when we're in the process of decomposing a micro-op and
          *  microopPC will be valid.  This is only the case when there isn't
@@ -146,13 +135,6 @@ class Decode : public Named
     /** Pop an element off the input buffer, if there are any */
     void popInput(ThreadID tid);
 
-    // /** Get load value prediction data to work on, or 0 if there is no
-    // data. */
-    // const LoadData *getLVPInput(ThreadID tid);
-
-    // /** Pop an element off the LVP input buffer, if there are any */
-    // void popLVPInput(ThreadID tid);
-
     /** Use the current threading policy to determine the next thread to
      *  decode from. */
     ThreadID getScheduledThread();
@@ -162,10 +144,7 @@ class Decode : public Named
         const BaseMinorCPUParams &params,
         Latch<ForwardInstData>::Output inp_,
         Latch<ForwardInstData>::Input out_,
-        Latch<LoadData>::Output lvpInp_,
-        Latch<LoadData>::Input lvpOut_,
-        std::vector<InputBuffer<ForwardInstData>> &next_stage_input_buffer,
-        std::vector<InputBuffer<LoadData>> &next_stage_input_buffer);
+        std::vector<InputBuffer<ForwardInstData>> &next_stage_input_buffer);
 
   public:
     /** Pass on input/buffer data to the output if you can */

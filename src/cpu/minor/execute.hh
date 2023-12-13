@@ -76,12 +76,6 @@ class Execute : public Named
     /** Input port carrying stream changes to Fetch1 */
     Latch<BranchData>::Input out;
 
-    /** Input port carrying load value prediction data from Decode */
-    Latch<LoadData>::Output lvpInp;
-
-    /** Input port carrying load resolution data to Fetch2 */
-    Latch<LoadData>::Input lvpOut;
-
     /** Pointer back to the containing CPU */
     MinorCPU &cpu;
 
@@ -157,7 +151,7 @@ class Execute : public Named
         DrainAllInsts /* Discarding all remaining insts */
     };
 
-    load_value_prediction::ConstantVUnit &constantVU;
+    load_value_prediction::ConstantVUnit &conValueUnit;
 
     struct ExecuteThreadInfo
     {
@@ -168,7 +162,6 @@ class Execute : public Named
             instsBeingCommitted(insts_committed),
             streamSeqNum(InstId::firstStreamSeqNum),
             lastPredictionSeqNum(InstId::firstPredictionSeqNum),
-            loadSeqNum(InstId::firstLoadSeqNum),
             drainState(NotDraining)
         { }
 
@@ -178,7 +171,6 @@ class Execute : public Named
             instsBeingCommitted(other.instsBeingCommitted),
             streamSeqNum(other.streamSeqNum),
             lastPredictionSeqNum(other.lastPredictionSeqNum),
-            loadSeqNum(other.loadSeqNum),
             drainState(other.drainState)
         { }
 
@@ -212,10 +204,7 @@ class Execute : public Named
          *  a branch, but it minimises disruption in stream identification */
         InstSeqNum lastPredictionSeqNum;
 
-        InstSeqNum loadSeqNum;
-
-        /** State progression for draining NotDraining -> ...
-         * -> ... -> DrainAllInsts */
+        /** State progression for draining NotDraining -> ... -> DrainAllInsts */
         DrainState drainState;
     };
 
@@ -244,12 +233,6 @@ class Execute : public Named
      *  if that is a stream-changing branch update the streamSeqNum */
     void updateBranchData(ThreadID tid, BranchData::Reason reason,
         MinorDynInstPtr inst, const PCStateBase &target, BranchData &branch);
-
-    /** Actually create a load to communicate to Fetch2 */
-    void updateLoadData(ThreadID tid, LoadData::Reason reason,
-                        MinorDynInstPtr inst,
-          load_value_prediction::LVPredUnit::Result result, bool is_correct,
-          LoadData &load);
 
     /** Handle extracting mem ref responses from the memory queues and
      *  completing the associated instructions.
@@ -345,9 +328,7 @@ class Execute : public Named
         MinorCPU &cpu_,
         const BaseMinorCPUParams &params,
         Latch<ForwardInstData>::Output inp_,
-        Latch<BranchData>::Input out_,
-        Latch<LoadData>::Output lvpInp_,
-        Latch<LoadData>::Input lvpOut_);
+        Latch<BranchData>::Input out_);
 
     ~Execute();
 

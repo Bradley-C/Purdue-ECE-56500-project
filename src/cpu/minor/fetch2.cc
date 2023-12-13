@@ -62,24 +62,20 @@ Fetch2::Fetch2(const std::string &name,
     const BaseMinorCPUParams &params,
     Latch<ForwardLineData>::Output inp_,
     Latch<BranchData>::Output branchInp_,
-    Latch<LoadData>::Output lvpInp_,
     Latch<BranchData>::Input predictionOut_,
     Latch<ForwardInstData>::Input out_,
-    Latch<LoadData>::Input lvpOut_,
     std::vector<InputBuffer<ForwardInstData>> &next_stage_input_buffer) :
     Named(name),
     cpu(cpu_),
     inp(inp_),
     branchInp(branchInp_),
-    lvpInp(lvpInp_),
     predictionOut(predictionOut_),
     out(out_),
-    lvpOut(lvpOut_),
     nextStageReserve(next_stage_input_buffer),
     outputWidth(params.decodeInputWidth),
     processMoreThanOneInput(params.fetch2CycleInput),
     branchPredictor(*params.branchPred),
-    loadValuePredictor(*params.loadValuePred),
+    lVPred(*params.loadValuePred),
     fetchInfo(params.numThreads),
     threadPriority(0), stats(&cpu_)
 {
@@ -243,91 +239,6 @@ Fetch2::predictBranch(MinorDynInstPtr inst, BranchData &branch)
 }
 
 void
-Fetch2::updateLoadValuePrediction(const LoadData &load)
-{
-    // std::cout << "Fetch2::updateLoadValuePrediction()." << std::endl;
-    MinorDynInstPtr inst = load.inst;
-
-    /* Don't update on faults nor instructions we did not predict */
-    if (inst->isFault())
-    {
-        std::cout << "Returning early from Fetch 2 update."
-                  << " IsFault:" << inst->isFault()
-                  << " PredictionAttempted:"
-                  << inst->triedToPredictLoadValue
-                  << std::endl;
-        return;
-    }
-
-    // std::cout << "Fetch2 load.reason: " << load.reason << std::endl;
-    switch (load.reason)
-    {
-        case LoadData::Reason::NoLoad:
-            /* No data to update*/
-            // std::cout << "Fetch2::updateLoadValuePrediction()."
-            //           << " NoLoad." << std::endl;
-            break;
-        case LoadData::Reason::LoadValuePrediction:
-            /* Should not happen since Fetch2 is the only source of
-               LoadValuePredictions*/
-            // std::cout << "Fetch2::updateLoadValuePrediction()."
-            //           << " LoadValuPrediction." << std::endl;
-            break;
-        case LoadData::Reason::CorrectlyPredictedLoadValue:
-            // std::cout << "Calling update in Fetch2." << std::endl;
-            loadValuePredictor.update(inst->id.loadSeqNum, true,
-                                      load.loadValue, load.loadSize,
-                                      inst->id.threadId);
-            break;
-        case LoadData::Reason::BadlyPredictedLoadValue:
-            // std::cout << "Calling squash in Fetch2." << std::endl;
-            // DPRINTF(Load, "Load value mis-predicted. inst: %s value: %x\n",
-            //         *inst, load.loadValue);
-            loadValuePredictor.squash(inst->id.loadSeqNum, load.loadValue,
-                                      load.loadSize, inst->id.threadId);
-            break;
-    }
-}
-
-void
-Fetch2::predictLoadValue(MinorDynInstPtr inst, LoadData &load)
-{
-    Fetch2ThreadInfo &thread = fetchInfo[inst->id.threadId];
-
-    assert(!inst->loadValuePredicted);
-
-    /* Skip non-load instructions */
-
-    if (inst->staticInst->isLoad())
-    {
-        /* Tried to predict */
-        inst->triedToPredictLoadValue = true;
-
-        // DPRINTF(Load, "Trying to predict for inst: %s\n", *inst);
-        load_value_prediction::LVPredUnit::Result result;
-        result = loadValuePredictor.getPrediction(inst->staticInst,
-                                        inst->id.loadSeqNum,
-                                        *inst->pc, inst->id.threadId);
-        inst->loadValuePredicted = true;
-        inst->predictedLoadValue = result.data;
-
-        /* Update the loadSeqNum */
-        thread.loadSeqNum++;
-
-        LoadData new_load = LoadData(LoadData::LoadValuePrediction,
-                                      inst->id.threadId, thread.loadSeqNum,
-                                      result, false, inst);
-        load = new_load;
-
-        // DPRINTF(Load, "Load inst predicted: %s value: %x "
-        // new loadSeqNum: %d\n", *inst, *inst->predictedLoadValue,
-        // thread.loadSeqNum);
-    } else {
-        // DPRINTF(Load, "Not attempting prediction for inst: %s\n", *inst);
-    }
-}
-
-void
 Fetch2::evaluate()
 {
     /* Push input onto appropriate input buffer */
@@ -337,8 +248,6 @@ Fetch2::evaluate()
     ForwardInstData &insts_out = *out.inputWire;
     BranchData prediction;
     BranchData &branch_inp = *branchInp.outputWire;
-    LoadData loadPrediction;
-    LoadData &lvp_inp = *lvpInp.outputWire;
 
     //if (insts_out.LVPT_value != 55){
     //insts_out.LVPT_value = 55;
@@ -360,8 +269,6 @@ Fetch2::evaluate()
     /* React to branches from Execute to update local branch prediction
      *  structures */
     updateBranchPrediction(branch_inp);
-
-    updateLoadValuePrediction(lvp_inp);
 
     /* If a branch arrives, don't try and do anything about it.  Only
      *  react to your own predictions */
@@ -565,9 +472,6 @@ Fetch2::evaluate()
                     /* Predict any branches and issue a branch if
                      *  necessary */
                     predictBranch(dyn_inst, prediction);
-
-                    /* Predict the load value */
-                    predictLoadValue(dyn_inst, loadPrediction);
                 } else {
                     DPRINTF(Fetch, "Inst not ready yet\n");
                 }
@@ -604,12 +508,12 @@ Fetch2::evaluate()
                     dyn_inst->minorTraceInst(*this,
                             cpu.threads[0]->getIsaPtr()->regClasses());
                 }
-                // if (dyn_inst->staticInst->isLoad())
-                // {
-                //     insts_out.LCT_value = loadValuePredictor.getPrediction(
-                //         dyn_inst->staticInst, dyn_inst->id.fetchSeqNum ,
-                //         *dyn_inst->pc, insts_out.LVPT_value, tid);
-                // }
+                bool is_load = dyn_inst->staticInst->isLoad();
+                if (is_load){
+                    insts_out.LCT_value = lVPred.getPrediction(
+                        dyn_inst->staticInst, dyn_inst->id.fetchSeqNum ,
+                        *dyn_inst->pc, insts_out.LVPT_value, tid);
+                }
             }
 
             /* Remember the streamSeqNum of this line so we can tell when
