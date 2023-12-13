@@ -326,6 +326,16 @@ Execute::updateBranchData(
 }
 
 void
+updateLoadData(ThreadID tid, MinorDynInstPtr inst, bool is_correct,
+          uint8_t *corr_data, unsigned corr_size, BranchData &branch)
+{
+    branch.update_LVPU = true;
+    branch.pass_fail_LCT = is_correct;
+    branch.new_LVPT_value = corr_data;
+    branch.newLoadSize = corr_size;
+}
+
+void
 Execute::handleMemResponse(MinorDynInstPtr inst,
     LSQ::LSQRequestPtr response, BranchData &branch, Fault &fault)
 {
@@ -1040,7 +1050,7 @@ Execute::commitInst(MinorDynInstPtr inst, bool early_memory_issue,
 
 void
 Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
-    BranchData &branch)
+    BranchData &branch, LoadData &lvp_state)
 {
     Fault fault = NoFault;
     Cycles now = cpu.curCycle();
@@ -1168,85 +1178,77 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                 if (is_store && packet){
                     uint64_t addr_check =static_cast<uint64_t>(packet->getAddr
                     ());
-                    uint64_t new_value =static_cast<uint64_t>
-                    ((packet->getConstPtr<uint64_t>()[0]));
-
-                    load_value_prediction::ConstantVUnit::CVUReturn
-                    cvuResult;
+                    uint8_t *new_value = packet->getPtr<uint8_t>();
+                    load_value_prediction::ConstantVUnit::CVUReturn cvuResult;
                     cvuResult = conValueUnit.storeClear(*inst->pc,
                     addr_check,
                     new_value,
                     thread_id);
 
-                    out.inputWire->pass_fail_LCT = cvuResult.clear;
-                    out.inputWire->new_LVPT_value = cvuResult.value;
-                    out.inputWire->update_LVPU = cvuResult.update;
-                    out.inputWire->returnPC = cvuResult.pc;
+                    lvp_state.is_correct = cvuResult.clear;
+                    lvp_state.new_load_data = cvuResult.value;
+                    lvp_state.new_size = packet->getSize();
+                    lvp_state.update_lvpu = cvuResult.update;
+                    lvp_state.load_inst_pc = cvuResult.pc;
                 }
 
                 //Check if LVPT matches mem access
-                if (is_load ) {
-                    PacketPtr packet = mem_response->packet;
-                    if (packet){
-                        uint64_t addr_check = static_cast<uint64_t>
-                        (packet->getAddr());
-                        uint64_t new_value =static_cast<uint64_t>
-                        ((packet->getConstPtr<uint64_t>()[0]));
-                        //std::cout <<  inp.outputWire->LCT_value << std::endl;
+                if (is_load && packet) {
+                    uint64_t addr_check = static_cast<uint64_t>
+                    (packet->getAddr());
+                    uint8_t *new_value = packet->getPtr<uint8_t>();
+                    //std::cout <<  inp.outputWire->LCT_value << std::endl;
 
-                        if ((int)inp.outputWire->LCT_value==3){
+                    if ((int)inp.outputWire->LCT_value==3){
 
-                            load_value_prediction::ConstantVUnit::CVUReturn
-                            cvuResult;
-                            cvuResult = conValueUnit.addrMatch(*inst->pc,
-                            addr_check, thread_id);
-                            out.inputWire->pass_fail_LCT = cvuResult.clear;
-                            out.inputWire->new_LVPT_value = cvuResult.value;
-                            out.inputWire->update_LVPU = cvuResult.update;
-                            out.inputWire->returnPC = cvuResult.pc;
+                        load_value_prediction::ConstantVUnit::CVUReturn
+                        cvuResult;
+                        cvuResult = conValueUnit.addrMatch(*inst->pc,
+                        addr_check, thread_id);
+                        lvp_state.is_correct = cvuResult.clear;
+                        lvp_state.new_load_data = cvuResult.value;
+                        lvp_state.update_lvpu = cvuResult.update;
+                        lvp_state.load_inst_pc = cvuResult.pc;
 
-                            if (!cvuResult.clear){
-                                issued_mem_ref=false;
-                                completed_inst = false;
-                                if (mem_response){
-                                    std::cout << "Mem response is available"
-                                    << std::endl;
-                                 }
-                                /*
-                                lsq.popResponse(mem_response);
-                                if (!mem_response){
-                                    std::cout << "Mem response was deleted"
-                                    << std::endl;
-                                 }
-                                 */
-                            }
-                            else{
-                                conValueUnit.updateEntry(*inst->pc, new_value,
-                                thread_id);
+                        if (!cvuResult.clear){
+                            issued_mem_ref=false;
+                            completed_inst = false;
+                            if (mem_response){
+                                std::cout << "Mem response is available"
+                                << std::endl;
+                              }
+                            /*
+                            lsq.popResponse(mem_response);
+                            if (!mem_response){
+                                std::cout << "Mem response was deleted"
+                                << std::endl;
+                              }
+                              */
+                        }
+                        else{
+                            conValueUnit.updateEntry(*inst->pc, addr_check,
+                            thread_id);
+                        }
+                    }
+                    else{
+                        lvp_state.is_correct = false;
+                        lvp_state.new_load_data = inp.outputWire->LVPT_value;
+                        lvp_state.update_lvpu = true;
+                        lvp_state.load_inst_pc = inst->pc->instAddr();
+                        //std::cout <<  inp.outputWire->LVPT_value <<
+                        //std::endl;
+                        if (new_value == inp.outputWire->LVPT_value) {
+                            lvp_state.is_correct = true;
+
+                            if ((int)inp.outputWire->LCT_value==2){
+                                conValueUnit.updateEntry(*inst->pc,
+                                packet->getAddr(), thread_id);
                             }
                         }
                         else{
-                            out.inputWire->pass_fail_LCT = false;
-                            out.inputWire->new_LVPT_value =
-                            inp.outputWire->LVPT_value;
-                            out.inputWire->update_LVPU = true;
-                            out.inputWire->returnPC = inst->pc->instAddr();
-                            //std::cout <<  inp.outputWire->LVPT_value <<
-                            //std::endl;
-                            if (new_value == inp.outputWire->LVPT_value) {
-                                out.inputWire->pass_fail_LCT = true;
-
-                                if ((int)inp.outputWire->LCT_value==2){
-                                    conValueUnit.updateEntry(*inst->pc,
-                                    inp.outputWire->LVPT_value,thread_id);
-                                }
-                            }
-                            else{
-                                out.inputWire->new_LVPT_value = new_value;
-                            }
+                            lvp_state.new_load_data = new_value;
                         }
                     }
-
                 }
                 handleMemResponse(inst, mem_response, branch, fault);
 
@@ -1527,6 +1529,10 @@ Execute::evaluate()
 
     BranchData &branch = *out.inputWire;
 
+    /* state for lvp data to replace in BranchData at the end so that it
+     * isn't clobbered during branch updated */
+    LoadData lvp_state;
+
     //branch.pass_fail_LCT = false;
     //branch.new_LVPT_value = 75;
 
@@ -1561,7 +1567,7 @@ Execute::evaluate()
             if (commit_info.drainState != NotDraining) {
                 if (commit_info.drainState == DrainCurrentInst) {
                     /* Commit only micro-ops, don't kill anything else */
-                    commit(commit_tid, true, false, branch);
+                    commit(commit_tid, true, false, branch, lvp_state);
 
                     if (isInbetweenInsts(commit_tid))
                         setDrainState(commit_tid, DrainHaltFetch);
@@ -1572,7 +1578,7 @@ Execute::evaluate()
                     /* Kill all instructions */
                     while (getInput(commit_tid))
                         popInput(commit_tid);
-                    commit(commit_tid, false, true, branch);
+                    commit(commit_tid, false, true, branch, lvp_state);
                 }
             } else {
                 /* Commit micro-ops only if interrupted.  Otherwise, commit
@@ -1581,7 +1587,8 @@ Execute::evaluate()
                         commit_tid);
                 bool only_commit_microops = interrupted &&
                                             hasInterrupt(commit_tid);
-                commit(commit_tid, only_commit_microops, false, branch);
+                commit(commit_tid, only_commit_microops, false, branch,
+                        lvp_state);
             }
 
             /* Halt fetch, but don't do it until we have the current instruction in
@@ -1709,6 +1716,13 @@ Execute::evaluate()
         inputBuffer[inp.outputWire->threadId].pushTail();
     // std::cout << "Value in LVPT: "
     // << inp.outputWire->LVPT_value << std::endl;
+
+    branch.returnPC = lvp_state.load_inst_pc;
+    branch.loadSeqNum = inp.outputWire->loadSeqNum;
+    branch.update_LVPU = lvp_state.update_lvpu;
+    branch.pass_fail_LCT = lvp_state.is_correct;
+    branch.new_LVPT_value = lvp_state.new_load_data;
+    branch.newLoadSize = lvp_state.new_size;
 }
 
 ThreadID

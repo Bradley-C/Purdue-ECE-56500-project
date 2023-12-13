@@ -163,8 +163,11 @@ class ConstantVUnit : public SimObject
         /** The entry's index to clear */
         Addr pc = 0;
 
-        /** The entry's value to replace old*/
-        uint64_t value = 0;
+        /** The data written by the store instruction*/
+        uint8_t *value = 0;
+
+        /** The address that the store instruction wrote to */
+        uint64_t addr;
 
         /** Whether or not the replacement is valid. */
         bool clear = false;
@@ -190,7 +193,7 @@ class ConstantVUnit : public SimObject
      *  @return CVUReturn that tells the LVPT/LCT how to update
      */
     ConstantVUnit::CVUReturn storeClear(PCStateBase &inst_pc,
-    uint64_t data_addr, uint64_t new_addr, ThreadID tid);
+    uint64_t data_addr, uint8_t *new_value, ThreadID tid);
 
     /** Do CAM search for given PC and Load Addr, used to pass cache
      *  for loads

@@ -75,7 +75,7 @@ Fetch2::Fetch2(const std::string &name,
     outputWidth(params.decodeInputWidth),
     processMoreThanOneInput(params.fetch2CycleInput),
     branchPredictor(*params.branchPred),
-    lVPred(*params.loadValuePred),
+    loadValuePredictor(*params.loadValuePred),
     fetchInfo(params.numThreads),
     threadPriority(0), stats(&cpu_)
 {
@@ -191,6 +191,20 @@ Fetch2::updateBranchPrediction(const BranchData &branch)
 }
 
 void
+Fetch2::updateLoadValuePrediction(const BranchData &branch)
+{
+    if (branch.pass_fail_LCT) {
+        loadValuePredictor.update(branch.inst->id.loadSeqNum,
+                            branch.pass_fail_LCT, branch.new_LVPT_value,
+                            branch.newLoadSize, branch.inst->id.threadId);
+    } else {
+        loadValuePredictor.squash(branch.inst->id.loadSeqNum,
+                            branch.new_LVPT_value, branch.newLoadSize,
+                            branch.inst->id.threadId);
+    }
+}
+
+void
 Fetch2::predictBranch(MinorDynInstPtr inst, BranchData &branch)
 {
     Fetch2ThreadInfo &thread = fetchInfo[inst->id.threadId];
@@ -239,6 +253,29 @@ Fetch2::predictBranch(MinorDynInstPtr inst, BranchData &branch)
 }
 
 void
+Fetch2::predictLoadValue(MinorDynInstPtr inst, ForwardInstData &insts_out)
+{
+    Fetch2ThreadInfo &thread = fetchInfo[inst->id.threadId];
+
+    assert(!inst->loadValuePredicted);
+
+    if (inst->staticInst->isLoad()) {
+        std::unique_ptr<PCStateBase> inst_pc(inst->pc->clone());
+        load_value_prediction::LVPredUnit::Result result;
+        result = loadValuePredictor.getPrediction(inst->staticInst,
+                                      inst->id.loadSeqNum, *inst->pc,
+                                      inst->id.threadId);
+        insts_out.loadSeqNum = ++thread.loadSeqNum;
+        insts_out.LVPT_value = result.loadData;
+        insts_out.loadSize = result.loadSize;
+        insts_out.LCT_value = result.loadClass;
+    } else {
+        DPRINTF(Fetch, "Not attempting load value prediction for inst: %s\n",
+                *inst);
+    }
+}
+
+void
 Fetch2::evaluate()
 {
     /* Push input onto appropriate input buffer */
@@ -269,6 +306,10 @@ Fetch2::evaluate()
     /* React to branches from Execute to update local branch prediction
      *  structures */
     updateBranchPrediction(branch_inp);
+
+    /* React to loads from Execute to update local load value prediction
+     *  structures */
+    updateLoadValuePrediction(branch_inp);
 
     /* If a branch arrives, don't try and do anything about it.  Only
      *  react to your own predictions */
@@ -472,6 +513,7 @@ Fetch2::evaluate()
                     /* Predict any branches and issue a branch if
                      *  necessary */
                     predictBranch(dyn_inst, prediction);
+                    predictLoadValue(dyn_inst, insts_out);
                 } else {
                     DPRINTF(Fetch, "Inst not ready yet\n");
                 }
@@ -510,9 +552,7 @@ Fetch2::evaluate()
                 }
                 bool is_load = dyn_inst->staticInst->isLoad();
                 if (is_load){
-                    insts_out.LCT_value = lVPred.getPrediction(
-                        dyn_inst->staticInst, dyn_inst->id.fetchSeqNum ,
-                        *dyn_inst->pc, insts_out.LVPT_value, tid);
+                    predictLoadValue(dyn_inst, insts_out);
                 }
             }
 

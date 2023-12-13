@@ -71,24 +71,26 @@ LoadValuePredictionTable::getIndex(Addr instPC, ThreadID tid)
 // value = 0 to represent invalid entry.
 void
 LoadValuePredictionTable::lookup(const Addr inst_pc, ThreadID tid,
-                                 uint64_t &data)
+                                 uint8_t *data, unsigned &size)
 {
     unsigned lvpt_idx = getIndex(inst_pc, tid);
 
     assert(lvpt_idx < numEntries);
 
-    data = LVPT[lvpt_idx].data;
+    data = LVPT[lvpt_idx].loadData;
+    size = LVPT[lvpt_idx].loadSize;
 }
 
 void
-LoadValuePredictionTable::update(Addr inst_pc, const uint64_t new_data,
-                                 ThreadID tid)
+LoadValuePredictionTable::update(Addr inst_pc, uint8_t *new_data,
+                                 unsigned new_size, ThreadID tid)
 {
     unsigned lvpt_idx = getIndex(inst_pc, tid);
 
     assert(lvpt_idx < numEntries);
 
-    LVPT[lvpt_idx].data = new_data;
+    LVPT[lvpt_idx].loadData = new_data;
+    LVPT[lvpt_idx].loadSize = new_size;
 }
 
 } // namespace branch_prediction

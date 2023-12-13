@@ -127,9 +127,11 @@ class BranchData /* : public ReportIF, public BubbleIF */
     MinorDynInstPtr inst = MinorDynInst::bubble();
 
     Addr returnPC;
+    InstSeqNum loadSeqNum;
     bool update_LVPU=false;
     bool pass_fail_LCT;
-    uint64_t new_LVPT_value;
+    uint8_t *new_LVPT_value;
+    unsigned newLoadSize;
 
   public:
     BranchData() {}
@@ -299,7 +301,11 @@ class ForwardInstData /* : public ReportIF, public BubbleIF */
     /** Thread associated with these instructions */
     ThreadID threadId;
 
-    uint64_t LVPT_value;
+    InstSeqNum loadSeqNum;
+
+    uint8_t *LVPT_value;
+
+    unsigned loadSize;
 
     load_value_prediction::LVPredUnit::eLoadClass LCT_value;
 

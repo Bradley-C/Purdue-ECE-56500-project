@@ -132,6 +132,15 @@ class Execute : public Named
   public: /* Public for Pipeline to be able to pass it to Decode */
     std::vector<InputBuffer<ForwardInstData>> inputBuffer;
 
+    typedef struct LoadData
+    {
+        uint8_t *new_load_data;
+        Addr load_inst_pc;
+        unsigned new_size;
+        bool update_lvpu;
+        bool is_correct;
+    } LoadData;
+
   protected:
     /** Stage cycle-by-cycle state */
 
@@ -234,6 +243,11 @@ class Execute : public Named
     void updateBranchData(ThreadID tid, BranchData::Reason reason,
         MinorDynInstPtr inst, const PCStateBase &target, BranchData &branch);
 
+    /** Update LVPU state in an existing BranchData object to communicate to
+     *  Fetch2*/
+    void updateLoadData(ThreadID tid, MinorDynInstPtr inst, bool is_correct,
+          uint8_t *corr_data, unsigned corr_size, BranchData &branch);
+
     /** Handle extracting mem ref responses from the memory queues and
      *  completing the associated instructions.
      *  Fault is an output and will contain any fault caused (and already
@@ -313,7 +327,7 @@ class Execute : public Named
      *  committing.
      *  branch is set to any branch raised during commit. */
     void commit(ThreadID thread_id, bool only_commit_microops, bool discard,
-        BranchData &branch);
+        BranchData &branch, LoadData &lvp_state);
 
     /** Set the drain state (with useful debugging messages) */
     void setDrainState(ThreadID thread_id, DrainState state);

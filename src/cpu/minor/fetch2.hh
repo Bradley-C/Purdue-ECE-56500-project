@@ -97,7 +97,7 @@ class Fetch2 : public Named
     branch_prediction::BPredUnit &branchPredictor;
 
     /** Branch predictor passed from Python configuration */
-    load_value_prediction::LVPredUnit &lVPred;
+    load_value_prediction::LVPredUnit &loadValuePredictor;
 
   public:
     /* Public so that Pipeline can pass it to Fetch1 */
@@ -158,6 +158,8 @@ class Fetch2 : public Named
          *  prediction in Fetch2. */
         InstSeqNum predictionSeqNum = InstId::firstPredictionSeqNum;
 
+        InstSeqNum loadSeqNum = InstId::firstLoadSeqNum;
+
         /** Blocked indication for report */
         bool blocked = false;
     };
@@ -193,10 +195,18 @@ class Fetch2 : public Named
      *  Execute. */
     void updateBranchPrediction(const BranchData &branch);
 
+    /** Update LVP structures from feedback from
+     *  Execute. */
+    void updateLoadValuePrediction(const BranchData &branch);
+
     /** Predicts branches for the given instruction.  Updates the
      *  instruction's predicted... fields and also the branch which
      *  carries the prediction to Fetch1 */
     void predictBranch(MinorDynInstPtr inst, BranchData &branch);
+
+    /** Predicts load values for the given instruction. Updates the
+     *  instruction's predicted... fields */
+    void predictLoadValue(MinorDynInstPtr inst, ForwardInstData &insts_out);
 
     /** Use the current threading policy to determine the next thread to
      *  fetch from. */
