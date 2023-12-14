@@ -1161,7 +1161,8 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
 
         DPRINTF(MinorExecute, "Trying to commit canCommitInsts: %d\n",
             can_commit_insts);
-
+        load_value_prediction::ConstantVUnit::CVUReturn cvuResult;
+        cvuResult.update = false;
         /* Test for PC events after every instruction */
         if (isInbetweenInsts(thread_id) && tryPCEvents(thread_id)) {
             ThreadContext *thread = cpu.getContext(thread_id);
@@ -1196,7 +1197,7 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                 //issued_mem_ref = true;
                 bool is_store = inst->staticInst->isStore();
                 bool is_load = inst->staticInst->isLoad();
-                load_value_prediction::ConstantVUnit::CVUReturn cvuResult;
+
                 if (is_store && packet && packet->hasData()){
                     if (packet->getSize() <= 8) {
                         uint64_t new_value = packet->getUintX(ByteOrder::big);
