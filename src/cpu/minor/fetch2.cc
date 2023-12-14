@@ -192,15 +192,16 @@ Fetch2::updateBranchPrediction(const BranchData &branch)
 
 void
 Fetch2::updateLoadValuePrediction(const BranchData &branch)
-{
-    if (branch.pass_fail_LCT) {
-        loadValuePredictor.update(branch.inst->id.loadSeqNum,
-                            branch.pass_fail_LCT, branch.new_LVPT_value,
-                            branch.newLoadSize, branch.inst->id.threadId);
-    } else {
-        loadValuePredictor.squash(branch.inst->id.loadSeqNum,
-                            branch.new_LVPT_value, branch.newLoadSize,
-                            branch.inst->id.threadId);
+{   if (branch.update_LVPU){
+        if (branch.pass_fail_LCT) {
+            loadValuePredictor.update(branch.inst->id.loadSeqNum,
+                                branch.pass_fail_LCT, branch.new_LVPT_value,
+                                branch.newLoadSize, branch.inst->id.threadId);
+        } else {
+            loadValuePredictor.squash(branch.inst->id.loadSeqNum,
+                                branch.new_LVPT_value, branch.newLoadSize,
+                                branch.inst->id.threadId);
+        }
     }
 }
 
