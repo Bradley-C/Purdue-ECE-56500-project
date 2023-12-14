@@ -316,9 +316,11 @@ Execute::updateLoadData(LoadData &load, PacketPtr &packet, bool is_correct,
                         bool update_lvpu, Addr load_addr,
                         MinorDynInstPtr &inst)
 {
-    load.new_load_data = packet->getPtr<uint8_t>();
+    unsigned packet_size = packet->getSize();
+    load.new_load_data = new uint8_t [packet_size];
+    memcpy(load.new_load_data, packet->getPtr<uint8_t>(), packet_size);
     load.load_inst_pc = load_addr;
-    load.new_size = packet->getSize();
+    load.new_size = packet_size;
     load.load_seq_num = inst->id.loadSeqNum;
     load.update_lvpu = update_lvpu;
     load.is_correct = is_correct;
@@ -1196,10 +1198,10 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                 bool is_load = inst->staticInst->isLoad();
 
                 if (is_store && packet){
-                    if (inp.outputWire->LVPT_value)
+                    if (lvp_state.new_load_data != nullptr)
                         std::cout << 'oldValue:'
                                       << std::hex
-                                      << *inp.outputWire->LVPT_value
+                                      << *lvp_state.new_load_data
                                       << ' newValue:'
                                       << *packet->getPtr<uint8_t>()
                                       << std::dec << std::endl;
@@ -1230,10 +1232,10 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                     uint64_t addr_check = static_cast<uint64_t>
                     (packet->getAddr());
                     uint8_t *new_value = packet->getPtr<uint8_t>();
-                    if (inp.outputWire->LVPT_value)
+                    if (lvp_state.new_load_data != nullptr)
                         std::cout << 'oldValue:'
                                       << std::hex
-                                      << *inp.outputWire->LVPT_value
+                                      << *lvp_state.new_load_data
                                       << ' newValue:'
                                       << *packet->getPtr<uint8_t>()
                                       << std::dec << std::endl;
