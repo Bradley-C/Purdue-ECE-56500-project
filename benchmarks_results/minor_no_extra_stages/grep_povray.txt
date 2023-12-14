@@ -1,0 +1,7 @@
+simSeconds                                   0.007425                       # Number of seconds simulated (Second)
+system.cpu.ipc                               0.647996                       # IPC: instructions per cycle ((Count/Cycle))
+system.cpu.constantVU.loadMatched                  80                       # Number of loads that matched (Count)
+system.cpu.constantVU.loadMatchedIncorrect          201                       # Number of loads that did not matched (Count)
+system.cpu.dcache.overallAvgMissLatency::total 34596.301754                       # average overall miss latency ((Tick/Count))
+system.cpu.loadValuePred.lvpuLookups           742829                       # Number of LVPT lookups (Count)
+system.cpu.loadValuePred.predictedIncorrect      1682575                       # Number of incorrect predictions (Count)
