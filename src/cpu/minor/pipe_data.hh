@@ -130,7 +130,7 @@ class BranchData /* : public ReportIF, public BubbleIF */
     InstSeqNum loadSeqNum;
     bool update_LVPU=false;
     bool pass_fail_LCT;
-    uint8_t *new_LVPT_value;
+    uint64_t new_LVPT_value;
     unsigned newLoadSize;
 
   public:
@@ -303,7 +303,7 @@ class ForwardInstData /* : public ReportIF, public BubbleIF */
 
     InstSeqNum loadSeqNum;
 
-    uint8_t *LVPT_value = nullptr;
+    uint64_t LVPT_value;
 
     unsigned loadSize;
 

@@ -156,7 +156,7 @@ LVPredUnit::getPrediction(const StaticInstPtr &inst,
 }
 
 void
-LVPredUnit::update(const InstSeqNum &done_sn, bool correct, uint8_t *corr_data,
+LVPredUnit::update(const InstSeqNum &done_sn, bool correct, uint64_t corr_data,
                     unsigned corr_size, ThreadID tid)
 {
     //DPRINTF(Load, "[tid:%i] Committing loads until "
@@ -187,7 +187,7 @@ LVPredUnit::squash(const InstSeqNum &squashed_sn, ThreadID tid)
 }
 
 void
-LVPredUnit::squash(const InstSeqNum &squashed_sn, uint8_t *corr_data,
+LVPredUnit::squash(const InstSeqNum &squashed_sn, uint64_t corr_data,
                    unsigned corr_size, ThreadID tid)
 {
     // Now that we know that a load was mispredicted, we need to undo

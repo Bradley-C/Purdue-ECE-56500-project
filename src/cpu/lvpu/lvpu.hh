@@ -108,7 +108,7 @@ class LVPredUnit : public SimObject
 
     typedef struct Result
     {
-        uint8_t *loadData;
+        uint64_t loadData;
         unsigned loadSize;
         eLoadClass loadClass;
     } Result;
@@ -213,7 +213,7 @@ class LVPredUnit : public SimObject
      * @param done_sn The sequence number to commit any older updates up until.
      * @param tid The thread id.
      */
-    void update(const InstSeqNum &done_sn, bool correct, uint8_t *corr_data,
+    void update(const InstSeqNum &done_sn, bool correct, uint64_t corr_data,
                 unsigned corr_size, ThreadID tid);
 
     /**
@@ -232,7 +232,7 @@ class LVPredUnit : public SimObject
      * @param corr_result The correct load result.
      * @param tid The thread id.
      */
-    void squash(const InstSeqNum &squashed_sn, uint8_t *corr_data,
+    void squash(const InstSeqNum &squashed_sn, uint64_t corr_data,
                 unsigned corr_size, ThreadID tid);
 
     void dump();

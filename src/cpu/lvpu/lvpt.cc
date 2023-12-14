@@ -71,7 +71,7 @@ LoadValuePredictionTable::getIndex(Addr instPC, ThreadID tid)
 // value = 0 to represent invalid entry.
 void
 LoadValuePredictionTable::lookup(const Addr inst_pc, ThreadID tid,
-                                 uint8_t *data, unsigned &size)
+                                 uint64_t data, unsigned &size)
 {
     unsigned lvpt_idx = getIndex(inst_pc, tid);
 
@@ -82,7 +82,7 @@ LoadValuePredictionTable::lookup(const Addr inst_pc, ThreadID tid,
 }
 
 void
-LoadValuePredictionTable::update(Addr inst_pc, uint8_t *new_data,
+LoadValuePredictionTable::update(Addr inst_pc, uint64_t new_data,
                                  unsigned new_size, ThreadID tid)
 {
     unsigned lvpt_idx = getIndex(inst_pc, tid);

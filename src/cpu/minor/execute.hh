@@ -134,7 +134,7 @@ class Execute : public Named
 
     typedef struct LoadData
     {
-        uint8_t *new_load_data;
+        uint64_t new_load_data;
         Addr load_inst_pc;
         unsigned new_size;
         InstSeqNum load_seq_num;
@@ -254,7 +254,7 @@ class Execute : public Named
     /** Update LVPU state in an existing BranchData object to communicate to
      *  Fetch2*/
     void updateLoadData(ThreadID tid, MinorDynInstPtr inst, bool is_correct,
-          uint8_t *corr_data, unsigned corr_size, BranchData &branch);
+          uint64_t corr_data, unsigned corr_size, BranchData &branch);
 
     /** Handle extracting mem ref responses from the memory queues and
      *  completing the associated instructions.

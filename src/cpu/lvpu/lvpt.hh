@@ -46,7 +46,7 @@ class LoadValuePredictionTable
     struct LVPTEntry
     {
         /** The entry's data. */
-        uint8_t *loadData = nullptr;
+        uint64_t loadData;
 
         unsigned loadSize = 0;
 
@@ -85,14 +85,14 @@ class LoadValuePredictionTable
                              unsigned instShiftAmt, unsigned numThreads);
 
     /** Get a value from an LVPT entry. */
-    void lookup(Addr inst_pc, ThreadID tid, uint8_t *data, unsigned &size);
+    void lookup(Addr inst_pc, ThreadID tid, uint64_t data, unsigned &size);
 
     /** Updates the LVPT with the mispredicted value of a load.
      *  @param inst_pc The address of the load being updated.
      *  @param new_data The data at the address that was loaded.
      *  @param tid The thread id.
      */
-    void update(Addr inst_pc, uint8_t *new_data, unsigned new_size,
+    void update(Addr inst_pc, uint64_t new_data, unsigned new_size,
                 ThreadID tid);
 };
 

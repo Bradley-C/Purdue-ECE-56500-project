@@ -317,8 +317,7 @@ Execute::updateLoadData(LoadData &load, PacketPtr &packet, bool is_correct,
                         MinorDynInstPtr &inst)
 {
     unsigned packet_size = packet->getSize();
-    load.new_load_data = new uint8_t [packet_size];
-    memcpy(load.new_load_data, packet->getPtr<uint8_t>(), packet_size);
+    load.new_load_data = packet->getUintX(ByteOrder::big);
     load.load_inst_pc = load_addr;
     load.new_size = packet_size;
     load.load_seq_num = inst->id.loadSeqNum;
@@ -1198,21 +1197,21 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                 bool is_load = inst->staticInst->isLoad();
                 load_value_prediction::ConstantVUnit::CVUReturn cvuResult;
                 if (is_store && packet){
-                    if (lvp_state.new_load_data != nullptr)
+                    // if (lvp_state.new_load_data != nullptr)
                         std::cout << 'oldValue:'
                                       << std::hex
-                                      << *lvp_state.new_load_data
+                                      << lvp_state.new_load_data
                                       << ' newValue:'
-                                      << *packet->getPtr<uint8_t>()
+                                      << packet->getUintX(ByteOrder::big)
                                       << std::dec << std::endl;
-                    else
-                      std::cout << "(store) load data still nullptr."
-                                << " store pc:" << inst->pc->instAddr()
-                                << std::endl;
+                    // else
+                      // std::cout << "(store) load data still nullptr."
+                      //           << " store pc:" << inst->pc->instAddr()
+                      //           << std::endl;
 
                     uint64_t addr_check =static_cast<uint64_t>(packet->getAddr
                     ());
-                    uint8_t *new_value = packet->getPtr<uint8_t>();
+                    uint64_t new_value = packet->getUintX(ByteOrder::big);
                     cvuResult = conValueUnit.storeClear(*inst->pc,
                     addr_check,
                     new_value,
@@ -1232,18 +1231,18 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                 if (is_load && packet) {
                     uint64_t addr_check = static_cast<uint64_t>
                     (packet->getAddr());
-                    uint8_t *new_value = packet->getPtr<uint8_t>();
-                    if (lvp_state.new_load_data != nullptr)
+                    uint64_t new_value = packet->getUintX(ByteOrder::big);
+                    // if (lvp_state.new_load_data != nullptr)
                         std::cout << 'oldValue:'
                                       << std::hex
-                                      << *lvp_state.new_load_data
+                                      << lvp_state.new_load_data
                                       << ' newValue:'
-                                      << *packet->getPtr<uint8_t>()
+                                      << packet->getUintX(ByteOrder::big)
                                       << std::dec << std::endl;
-                    else
-                      std::cout << "(load) load data still nullptr."
-                                << " load pc:" << inst->pc->instAddr()
-                                << std::endl;
+                    // else
+                      // std::cout << "(load) load data still nullptr."
+                      //           << " load pc:" << inst->pc->instAddr()
+                      //           << std::endl;
 
                     if ((int)inp.outputWire->LCT_value==3){
                         cvuResult = conValueUnit.addrMatch(*inst->pc,
@@ -1292,7 +1291,7 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                                 conValueUnit.updateEntry(*inst->pc,
                                 packet->getAddr(), thread_id);
                             }
-                            cvuResult.update = true;
+                            cvuResult.clear = false;
                         }
                         else{
                             // lvp_state.new_load_data = new (uint8_t)

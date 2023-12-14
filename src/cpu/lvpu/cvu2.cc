@@ -167,7 +167,7 @@ uint64_t new_value, ThreadID tid)
 
 ConstantVUnit::CVUReturn
 ConstantVUnit::storeClear(PCStateBase &inst_pc,
- uint64_t store_addr, uint8_t *new_value, ThreadID tid){
+ uint64_t store_addr, uint64_t new_value, ThreadID tid){
     CVUReturn return_data;
     unsigned cvu_idx = getIndexCVU(inst_pc.instAddr(), tid);
     assert(cvu_idx < numEntries);

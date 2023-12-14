@@ -195,7 +195,7 @@ Fetch2::updateLoadValuePrediction(const BranchData &branch)
 {
     if (branch.new_LVPT_value)
             std::cout << '(Fetch2, update) LoadData: '
-                      << *branch.new_LVPT_value
+                      << branch.new_LVPT_value
                       << ' pc: '
                       << branch.returnPC
                       << std::endl;
@@ -280,7 +280,7 @@ Fetch2::predictLoadValue(MinorDynInstPtr inst, ForwardInstData &insts_out)
         insts_out.LCT_value = result.loadClass;
         if (insts_out.LVPT_value) {
             std::cout << '(Fetch2, predict) LoadData: '
-                      << *insts_out.LVPT_value
+                      << insts_out.LVPT_value
                       << ' pc: '
                       << inst->pc->instAddr()
                       << std::endl;
