@@ -14,7 +14,7 @@ class LoadValuePredictor(SimObject):
     lctSize = Param.Unsigned(512, "Number of LCT entries")
     lctBits = Param.Unsigned(2, "Number of bits per LCT entry")
 
-    instShiftAmt = Param.Unsigned(3, "Number of bits to shift instructions by")
+    instShiftAmt = Param.Unsigned(1, "Number of bits to shift instructions by")
     # lct = Param.LoadClassficationTable(LoadClassificationTable(),
     #                                    "Load Classification Table")
     # cvu = Param.ConstantVerificationUnit(ConstantVerificationUnit(),
