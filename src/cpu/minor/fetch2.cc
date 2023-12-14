@@ -273,18 +273,16 @@ Fetch2::predictLoadValue(MinorDynInstPtr inst, ForwardInstData &insts_out)
         result = loadValuePredictor.getPrediction(inst->staticInst,
                                       inst->id.loadSeqNum, *inst->pc,
                                       inst->id.threadId);
-        std::cout << 'loadSeqNum: ' << inst->id.loadSeqNum << std::endl;
+        std::cout << "loadSeqNum: " << inst->id.loadSeqNum << std::endl;
         insts_out.loadSeqNum = ++thread.loadSeqNum;
         insts_out.LVPT_value = result.loadData;
         insts_out.loadSize = result.loadSize;
         insts_out.LCT_value = result.loadClass;
-        if (insts_out.LVPT_value) {
-            std::cout << '(Fetch2, predict) LoadData: '
-                      << insts_out.LVPT_value
-                      << ' pc: '
-                      << inst->pc->instAddr()
-                      << std::endl;
-        }
+        std::cout << "(Fetch2, predict) LoadData: "
+                  << insts_out.LVPT_value
+                  << " pc: "
+                  << inst->pc->instAddr()
+                  << std::endl;
     } else {
         DPRINTF(Fetch, "Not attempting load value prediction for inst: %s\n",
                 *inst);

@@ -77,6 +77,10 @@ class LVPredUnit : public SimObject
         statistics::Scalar predicted;
         /** Stat for number of loads predicted incorrectly. */
         statistics::Scalar predictedIncorrect;
+        /** Stat for number of loads with requests exceeding 8 B in size. */
+        statistics::Scalar bigLoads;
+        /** Stat for number of stores with requests exceeding 8 B in size. */
+        statistics::Scalar bigStores;
     } stats;
 
     /** Calculates the local index based on the PC. */
