@@ -303,7 +303,7 @@ class ForwardInstData /* : public ReportIF, public BubbleIF */
 
     InstSeqNum loadSeqNum;
 
-    uint8_t *LVPT_value;
+    uint8_t *LVPT_value = nullptr;
 
     unsigned loadSize;
 

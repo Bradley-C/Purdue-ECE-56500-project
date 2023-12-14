@@ -1196,7 +1196,7 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                 //issued_mem_ref = true;
                 bool is_store = inst->staticInst->isStore();
                 bool is_load = inst->staticInst->isLoad();
-
+                load_value_prediction::ConstantVUnit::CVUReturn cvuResult;
                 if (is_store && packet){
                     if (lvp_state.new_load_data != nullptr)
                         std::cout << 'oldValue:'
@@ -1205,17 +1205,19 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                                       << ' newValue:'
                                       << *packet->getPtr<uint8_t>()
                                       << std::dec << std::endl;
+                    else
+                      std::cout << "(store) load data still nullptr."
+                                << " store pc:" << inst->pc->instAddr()
+                                << std::endl;
 
                     uint64_t addr_check =static_cast<uint64_t>(packet->getAddr
                     ());
                     uint8_t *new_value = packet->getPtr<uint8_t>();
-                    load_value_prediction::ConstantVUnit::CVUReturn cvuResult;
                     cvuResult = conValueUnit.storeClear(*inst->pc,
                     addr_check,
                     new_value,
                     thread_id);
-
-                    updateLoadData(lvp_state, packet, cvuResult.clear,
+                    updateLoadData(lvp_state, packet, !cvuResult.clear,
                           cvuResult.update, cvuResult.pc, inst);
                     // lvp_state.is_correct = cvuResult.clear;
                     // lvp_state.new_load_data = new (uint8_t) [packet_size];
@@ -1228,7 +1230,6 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
 
                 //Check if LVPT matches mem access
                 if (is_load && packet) {
-                    load_value_prediction::ConstantVUnit::CVUReturn cvuResult;
                     uint64_t addr_check = static_cast<uint64_t>
                     (packet->getAddr());
                     uint8_t *new_value = packet->getPtr<uint8_t>();
@@ -1239,6 +1240,10 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                                       << ' newValue:'
                                       << *packet->getPtr<uint8_t>()
                                       << std::dec << std::endl;
+                    else
+                      std::cout << "(load) load data still nullptr."
+                                << " load pc:" << inst->pc->instAddr()
+                                << std::endl;
 
                     if ((int)inp.outputWire->LCT_value==3){
                         cvuResult = conValueUnit.addrMatch(*inst->pc,
@@ -1278,13 +1283,16 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                         // lvp_state.load_inst_pc = inst->pc->instAddr();
                         //std::cout <<  inp.outputWire->LVPT_value <<
                         //std::endl;
+                        cvuResult.pc = inst->pc->instAddr();
+                        cvuResult.update = true;
                         if (new_value == inp.outputWire->LVPT_value) {
-                            lvp_state.is_correct = true;
+                            // lvp_state.is_correct = true;
 
                             if ((int)inp.outputWire->LCT_value==2){
                                 conValueUnit.updateEntry(*inst->pc,
                                 packet->getAddr(), thread_id);
                             }
+                            cvuResult.update = true;
                         }
                         else{
                             // lvp_state.new_load_data = new (uint8_t)
@@ -1292,9 +1300,10 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                             // memcpy(lvp_state.new_load_data, packet_data,
                             //     packet_size);
                             // lvp_state.new_size = packet_size;
+                            cvuResult.clear = true;
                         }
                     }
-                    updateLoadData(lvp_state, packet, cvuResult.clear,
+                    updateLoadData(lvp_state, packet, !cvuResult.clear,
                           cvuResult.update, cvuResult.pc, inst);
                 }
                 handleMemResponse(inst, mem_response, branch, lvp_state,

@@ -661,10 +661,10 @@ envs = {
     'fast': env.Clone(ENV_LABEL='fast', OBJSUFFIX='.fo'),
 }
 
-envs['debug'].Append(CPPDEFINES=['DEBUG', 'TRACING_ON=1', 'ENABLE_16STAGES=1'])
+envs['debug'].Append(CPPDEFINES=['DEBUG', 'TRACING_ON=1', 'ENABLE_16STAGES=0'])
 envs['opt'].Append(CCFLAGS=['-g'], CPPDEFINES=['TRACING_ON=1', \
-'ENABLE_16STAGES = 1'])
-envs['fast'].Append(CPPDEFINES=['NDEBUG', 'TRACING_ON=0', 'ENABLE_16STAGES=1'])
+'ENABLE_16STAGES = 0'])
+envs['fast'].Append(CPPDEFINES=['NDEBUG', 'TRACING_ON=0', 'ENABLE_16STAGES=0'])
 
 # For Link Time Optimization, the optimisation flags used to compile
 # individual files are decoupled from those used at link time

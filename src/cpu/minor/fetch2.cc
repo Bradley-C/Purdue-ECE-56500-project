@@ -304,13 +304,15 @@ Fetch2::evaluate()
 
     assert(insts_out.isBubble());
 
+    /* React to loads from Execute to update local load value prediction
+     *  structures */
+    updateLoadValuePrediction(branch_inp);
+
     /* React to branches from Execute to update local branch prediction
      *  structures */
     updateBranchPrediction(branch_inp);
 
-    /* React to loads from Execute to update local load value prediction
-     *  structures */
-    updateLoadValuePrediction(branch_inp);
+
 
     /* If a branch arrives, don't try and do anything about it.  Only
      *  react to your own predictions */
@@ -551,10 +553,10 @@ Fetch2::evaluate()
                     dyn_inst->minorTraceInst(*this,
                             cpu.threads[0]->getIsaPtr()->regClasses());
                 }
-                bool is_load = dyn_inst->staticInst->isLoad();
-                if (is_load){
-                    predictLoadValue(dyn_inst, insts_out);
-                }
+                // bool is_load = dyn_inst->staticInst->isLoad();
+                // if (is_load){
+                //     predictLoadValue(dyn_inst, insts_out);
+                // }
             }
 
             /* Remember the streamSeqNum of this line so we can tell when

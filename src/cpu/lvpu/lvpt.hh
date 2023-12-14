@@ -46,9 +46,9 @@ class LoadValuePredictionTable
     struct LVPTEntry
     {
         /** The entry's data. */
-        uint8_t *loadData;
+        uint8_t *loadData = nullptr;
 
-        unsigned loadSize;
+        unsigned loadSize = 0;
 
         /** The entry's thread id. */
         ThreadID tid;
