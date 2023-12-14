@@ -175,7 +175,7 @@ ConstantVUnit::storeClear(PCStateBase &inst_pc,
 
     return_data = (CVUReturn){.pc=inst_pc.instAddr(),
     .addr=cvu[cvu_idx][0].value,
-    .clear=false, .update=false};
+    .clear=false, .update=true};
     for (unsigned i = 0; i < numEntries; i++) {
         for (unsigned j = 0; j < numAddrperEntry; j++) {
             if (cvu[i][j].value == store_addr && cvu[i][j].valid){
@@ -185,14 +185,11 @@ ConstantVUnit::storeClear(PCStateBase &inst_pc,
                 return_data = (CVUReturn)
                 {.pc=inst_pc.instAddr(), .value=new_value,
                 .clear=true,  .update=true};
-                ++stats.loadMatched;
             }
-            else{
-                if (j==numAddrperEntry-1 && i==numEntries-1){
-                ++stats.loadMatchedIncorrect;}
-            }
+
         }
     }
+
     return return_data;
 }
 
@@ -213,6 +210,11 @@ ThreadID tid) {
             // well
             return_data = (CVUReturn){.pc=inst_pc.instAddr(), .addr=data_addr,
             .clear=false, .update=true};
+            ++stats.loadMatched;
+        }
+        else{
+            if (j==numAddrperEntry-1){
+            ++stats.loadMatchedIncorrect;}
         }
     }
 
