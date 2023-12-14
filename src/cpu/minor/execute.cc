@@ -1203,12 +1203,12 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                         uint64_t addr_check =
                               static_cast<uint64_t>(packet->getAddr());
 
-                        std::cout << "(Execute, store) Mem Addr: "
-                        << addr_check
-                        << " Data Val: "<< new_value
-                        << " pc: "
-                        << ((pc_sip.instAddr()>> 1) & (1024-1))
-                        << std::endl;
+                        // std::cout << "(Execute, store) Mem Addr: "
+                        // << addr_check
+                        // << " Data Val: "<< new_value
+                        // << " pc: "
+                        // << ((pc_sip.instAddr()>> 1) & (1024-1))
+                        // << std::endl;
                         cvuResult = conValueUnit.storeClear(*inst->pc,
                                       addr_check, new_value, thread_id);
                         updateLoadData(lvp_state, packet, !cvuResult.clear,
@@ -1218,7 +1218,7 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                     }
 
                 } else {
-                  std::cout << "Packet had no data or data " << std::endl;
+                //   std::cout << "Packet had no data or data " << std::endl;
                 }
 
                 //Check if LVPT matches mem access
@@ -1228,22 +1228,22 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                     if (packet->getSize() <= 8 && insts_in) {
                         uint64_t new_value = packet->getUintX(ByteOrder::big);
                         int int_LCT= (int)insts_in->LCT_value;
-                        std::cout << "(Execute, load) Mem Addr: "
-                        << addr_check
-                        << " new Data Val: "<< new_value
-                        << " old Data Val: " << insts_in->LVPT_value
-                        << " LCT: " << int_LCT
-                        << " pc: "
-                        << ((pc_sip.instAddr()>> 1) & (1024-1))
-                        << " TID: " << thread_id
-                        << std::endl;
+                        // std::cout << "(Execute, load) Mem Addr: "
+                        // << addr_check
+                        // << " new Data Val: "<< new_value
+                        // << " old Data Val: " << insts_in->LVPT_value
+                        // << " LCT: " << int_LCT
+                        // << " pc: "
+                        // << ((pc_sip.instAddr()>> 1) & (1024-1))
+                        // << " TID: " << thread_id
+                        // << std::endl;
                         if (int_LCT==3){
                             cvuResult = conValueUnit.addrMatch(*inst->pc,
                                           addr_check, thread_id);
 
                             if (!cvuResult.clear){
                                // issued_mem_ref=false;
-                              //  completed_inst = false;
+                               // completed_inst = false;
                                 if (mem_response){
                                    // std::cout << "Mem response is available"
                                   //  << std::endl;
@@ -1269,11 +1269,11 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                         updateLoadData(lvp_state, packet, !cvuResult.clear,
                               cvuResult.update, cvuResult.pc, inst);
                     } else {
-                      std::cout << "Packet had no data" << std::endl;
+                    //   std::cout << "Packet had no data" << std::endl;
                     }
 
                 } else {
-                    std::cout << "Packet had no data or data " << std::endl;
+                    // std::cout << "Packet had no data or data " << std::endl;
                 }
                 handleMemResponse(inst, mem_response, branch, lvp_state,
                                   fault);

@@ -195,26 +195,26 @@ Fetch2::updateLoadValuePrediction(const BranchData &branch)
 {
     if (branch.new_LVPT_value){
 
-    std::cout << "(Fetch2, update) LoadData: "
-        << branch.new_LVPT_value
-        << " Update: " << branch.update_LVPU
-        << " Match: "<< branch.pass_fail_LCT
-        << " pc: "
-        << ((branch.returnPC >> 1) & (1024-1))
-        << std::endl;
+    // std::cout << "(Fetch2, update) LoadData: "
+    //     << branch.new_LVPT_value
+    //     << " Update: " << branch.update_LVPU
+    //     << " Match: "<< branch.pass_fail_LCT
+    //     << " pc: "
+    //     << ((branch.returnPC >> 1) & (1024-1))
+    //     << std::endl;
     }
 
     if (branch.update_LVPU){
 
         if (branch.new_LVPT_value ==0){
 
-            std::cout << "(Fetch2, update) LoadData: "
-            << branch.new_LVPT_value
-            << " Update: " << branch.update_LVPU
-            << " Match: "<< branch.pass_fail_LCT
-            << " pc: "
-            << ((branch.returnPC >> 1) & (1024-1))
-            << std::endl;
+            // std::cout << "(Fetch2, update) LoadData: "
+            // << branch.new_LVPT_value
+            // << " Update: " << branch.update_LVPU
+            // << " Match: "<< branch.pass_fail_LCT
+            // << " pc: "
+            // << ((branch.returnPC >> 1) & (1024-1))
+            // << std::endl;
         }
 
         if (branch.pass_fail_LCT) {
@@ -294,12 +294,12 @@ Fetch2::predictLoadValue(MinorDynInstPtr inst, ForwardInstData &insts_out)
         insts_out.LVPT_value = result.loadData;
         insts_out.loadSize = result.loadSize;
         insts_out.LCT_value = result.loadClass;
-        std::cout << "(Fetch2, predict) LoadData: "
-                  << insts_out.LVPT_value
-                  << " LCT: " << (int)insts_out.LCT_value
-                  << " pc: "
-                  << ((inst->pc->instAddr()>> 1) & (1024-1))
-                  << std::endl;
+        // std::cout << "(Fetch2, predict) LoadData: "
+        //           << insts_out.LVPT_value
+        //           << " LCT: " << (int)insts_out.LCT_value
+        //           << " pc: "
+        //           << ((inst->pc->instAddr()>> 1) & (1024-1))
+        //           << std::endl;
     } else {
         DPRINTF(Fetch, "Not attempting load value prediction for inst: %s\n",
                 *inst);

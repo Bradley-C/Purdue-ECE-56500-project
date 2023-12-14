@@ -128,7 +128,7 @@ dynInstAddTracing(MinorDynInstPtr inst, StaticInstPtr static_inst,
 void
 Decode::evaluate1()
 {
-    /* Push input onto appropriate input buffer */
+       /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
 
@@ -242,7 +242,17 @@ Decode::evaluate1()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -288,7 +298,7 @@ Decode::evaluate1()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage1Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId1);
             break;
         }
     }
@@ -296,13 +306,12 @@ Decode::evaluate1()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
 }
 
 void
 Decode::evaluate2()
 {
-    /* Push input onto appropriate input buffer */
+        /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
 
@@ -416,7 +425,17 @@ Decode::evaluate2()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -462,7 +481,7 @@ Decode::evaluate2()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId2);
             break;
         }
     }
@@ -470,16 +489,12 @@ Decode::evaluate2()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    std::cout << "Value in LVPT at Decode2 Stage: "
-    << inp.outputWire->LVPT_value << std::endl;
-
 }
 
 void
 Decode::evaluate3()
 {
-    /* Push input onto appropriate input buffer */
+        /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
 
@@ -593,7 +608,17 @@ Decode::evaluate3()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -639,7 +664,7 @@ Decode::evaluate3()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId3);
             break;
         }
     }
@@ -647,9 +672,6 @@ Decode::evaluate3()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    std::cout << "Value in LVPT at Decode3 Stage: "
-    << inp.outputWire->LVPT_value << std::endl;
 
 }
 
@@ -770,7 +792,17 @@ Decode::evaluate4()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -816,7 +848,7 @@ Decode::evaluate4()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId4);
             break;
         }
     }
@@ -824,16 +856,12 @@ Decode::evaluate4()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    std::cout << "Value in LVPT at Decode4 Stage: "
-    << inp.outputWire->LVPT_value << std::endl;
-
 }
 
 void
 Decode::evaluate5()
 {
-    /* Push input onto appropriate input buffer */
+       /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
 
@@ -947,7 +975,17 @@ Decode::evaluate5()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -993,7 +1031,7 @@ Decode::evaluate5()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId5);
             break;
         }
     }
@@ -1001,16 +1039,12 @@ Decode::evaluate5()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode5 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
-
 }
 
 void
 Decode::evaluate6()
 {
-    /* Push input onto appropriate input buffer */
+      /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
 
@@ -1124,7 +1158,17 @@ Decode::evaluate6()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -1170,7 +1214,7 @@ Decode::evaluate6()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId6);
             break;
         }
     }
@@ -1178,10 +1222,6 @@ Decode::evaluate6()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode6 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
-
 }
 
 void
@@ -1301,7 +1341,17 @@ Decode::evaluate7()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -1347,7 +1397,7 @@ Decode::evaluate7()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId7);
             break;
         }
     }
@@ -1355,10 +1405,6 @@ Decode::evaluate7()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode7 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
-
 }
 
 void
@@ -1478,7 +1524,17 @@ Decode::evaluate8()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -1524,7 +1580,7 @@ Decode::evaluate8()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId8);
             break;
         }
     }
@@ -1532,9 +1588,6 @@ Decode::evaluate8()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode8 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
 
 }
 
@@ -1655,7 +1708,17 @@ Decode::evaluate9()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -1701,7 +1764,7 @@ Decode::evaluate9()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId9);
             break;
         }
     }
@@ -1709,16 +1772,12 @@ Decode::evaluate9()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode9 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
-
 }
 
 void
 Decode::evaluate10()
 {
-    /* Push input onto appropriate input buffer */
+       /* Push input onto appropriate input buffer */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
 
@@ -1832,7 +1891,17 @@ Decode::evaluate10()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -1878,7 +1947,7 @@ Decode::evaluate10()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId10);
             break;
         }
     }
@@ -1886,9 +1955,6 @@ Decode::evaluate10()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode10 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
 
 }
 
@@ -2009,7 +2075,17 @@ Decode::evaluate11()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -2055,7 +2131,7 @@ Decode::evaluate11()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId11);
             break;
         }
     }
@@ -2063,9 +2139,6 @@ Decode::evaluate11()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode11 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
 
 }
 
@@ -2187,7 +2260,17 @@ Decode::evaluate12()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -2233,7 +2316,7 @@ Decode::evaluate12()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId12);
             break;
         }
     }
@@ -2241,10 +2324,6 @@ Decode::evaluate12()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode12 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
-
 }
 
 void
@@ -2364,7 +2443,17 @@ Decode::evaluate13()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -2410,7 +2499,7 @@ Decode::evaluate13()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId13);
             break;
         }
     }
@@ -2418,10 +2507,6 @@ Decode::evaluate13()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode13 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
-
 }
 
 void
@@ -2541,7 +2626,17 @@ Decode::evaluate14()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -2587,7 +2682,7 @@ Decode::evaluate14()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId14);
             break;
         }
     }
@@ -2595,9 +2690,6 @@ Decode::evaluate14()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode14 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
 
 }
 
@@ -2718,7 +2810,17 @@ Decode::evaluate15()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -2764,7 +2866,7 @@ Decode::evaluate15()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId15);
             break;
         }
     }
@@ -2772,10 +2874,6 @@ Decode::evaluate15()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode15 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
-
 }
 
 void
@@ -2895,7 +2993,17 @@ Decode::evaluate16()
 
                 /* Step to next sequence number */
                 decode_info.execSeqNum++;
-
+                if (inst->staticInst->isLoad()) {
+                    int int_LCT= (int)insts_in->LCT_value;
+                    insts_out.LVPT_value = insts_in->LVPT_value;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
+                }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);
                 /* Push into output */
@@ -2941,7 +3049,7 @@ Decode::evaluate16()
     for (ThreadID i = 0; i < cpu.numThreads; i++)
     {
         if (getInput(i) && nextStageReserve[i].canReserve()) {
-            cpu.activityRecorder->activateStage(Pipeline::DecodeStage2Id);
+            cpu.activityRecorder->activateStage(Pipeline::DecodeStageId16);
             break;
         }
     }
@@ -2949,10 +3057,6 @@ Decode::evaluate16()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    out.inputWire->LVPT_value = inp.outputWire->LVPT_value;
-    // std::cout << "Value in LVPT at Decode16 Stage: "
-    // << inp.outputWire->LVPT_value << std::endl;
-
 }
 #else
 void
@@ -3075,13 +3179,13 @@ Decode::evaluate()
                 if (inst->staticInst->isLoad()) {
                     int int_LCT= (int)insts_in->LCT_value;
                     insts_out.LVPT_value = insts_in->LVPT_value;
-                    std::cout << "(Decode0, passthrough) LoadData: "
-                    << inp.outputWire->LVPT_value
-                    << " LCT: " << int_LCT
-                    << " pc: "
-                    << ((inst->pc->instAddr()>> 1) & (1024-1))
-                    << " TID: " << tid
-                    << std::endl;
+                    // std::cout << "(Decode0, passthrough) LoadData: "
+                    // << inp.outputWire->LVPT_value
+                    // << " LCT: " << int_LCT
+                    // << " pc: "
+                    // << ((inst->pc->instAddr()>> 1) & (1024-1))
+                    // << " TID: " << tid
+                    // << std::endl;
                 }
                 /* Correctly size the output before writing */
                 if (output_index == 0) insts_out.resize(outputWidth);

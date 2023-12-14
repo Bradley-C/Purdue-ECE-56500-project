@@ -370,22 +370,22 @@ Pipeline::evaluate()
         activityRecorder.deactivateStage(Pipeline::CPUStageId);
         activityRecorder.deactivateStage(Pipeline::Fetch1StageId);
         activityRecorder.deactivateStage(Pipeline::Fetch2StageId);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage1Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage2Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage3Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage4Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage5Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage6Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage7Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage8Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage9Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage10Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage11Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage12Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage13Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage14Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage15Id);
-        activityRecorder.deactivateStage(Pipeline::DecodeStage16Id);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId1);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId2);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId3);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId4);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId5);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId6);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId7);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId8);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId9);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId10);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId11);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId12);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId13);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId14);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId15);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId16);
         activityRecorder.deactivateStage(Pipeline::ExecuteStageId);
     }
 
