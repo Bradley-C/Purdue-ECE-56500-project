@@ -584,7 +584,6 @@ Execute::issue(ThreadID thread_id)
     ExecuteThreadInfo &thread = executeInfo[thread_id];
 
     // uint8_t LVPT_value_exec = inp.outputWire->LVPT;
-    //std::cout << "Value in LVPT: " << insts_in->LVPT_value << std::endl;
     /* Early termination if we have no instructions */
     if (!insts_in)
         return 0;
@@ -1190,8 +1189,10 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                 lsq.popResponse(mem_response);
             }
             else {
-                PacketPtr packet = mem_response->packet;
+                const ForwardInstData *insts_in = getInput(thread_id);
 
+                PacketPtr packet = mem_response->packet;
+                PCStateBase &pc_sip = *inst->pc;
                 //issued_mem_ref = true;
                 bool is_store = inst->staticInst->isStore();
                 bool is_load = inst->staticInst->isLoad();
@@ -1199,15 +1200,15 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                 if (is_store && packet && packet->hasData()){
                     if (packet->getSize() <= 8) {
                         uint64_t new_value = packet->getUintX(ByteOrder::big);
-                        // if (lvp_state.new_load_data != nullptr)
-                        std::cout << "oldValue:"
-                                      << std::hex
-                                      << lvp_state.new_load_data
-                                      << " newValue:"
-                                      << new_value
-                                      << std::dec << std::endl;
                         uint64_t addr_check =
                               static_cast<uint64_t>(packet->getAddr());
+
+                        std::cout << "(Execute, store) Mem Addr: "
+                        << addr_check
+                        << " Data Val: "<< new_value
+                        << " pc: "
+                        << ((pc_sip.instAddr()>> 1) & (1024-1))
+                        << std::endl;
                         cvuResult = conValueUnit.storeClear(*inst->pc,
                                       addr_check, new_value, thread_id);
                         updateLoadData(lvp_state, packet, !cvuResult.clear,
@@ -1215,19 +1216,7 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                     } else {
 
                     }
-                    // else
-                      // std::cout << "(store) load data still nullptr."
-                      //           << " store pc:" << inst->pc->instAddr()
-                      //           << std::endl;
 
-
-                    // lvp_state.is_correct = cvuResult.clear;
-                    // lvp_state.new_load_data = new (uint8_t) [packet_size];
-                    // memcpy(lvp_state.new_load_data, packet_data,
-                    //         packet_size);
-                    // lvp_state.new_size = packet_size;
-                    // lvp_state.update_lvpu = cvuResult.update;
-                    // lvp_state.load_inst_pc = cvuResult.pc;
                 } else {
                   std::cout << "Packet had no data or data " << std::endl;
                 }
@@ -1236,67 +1225,44 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                 if (is_load && packet && packet->hasData()) {
                     uint64_t addr_check = static_cast<uint64_t>
                                 (packet->getAddr());
-                    if (packet->getSize() <= 8) {
+                    if (packet->getSize() <= 8 && insts_in) {
                         uint64_t new_value = packet->getUintX(ByteOrder::big);
-                        // if (lvp_state.new_load_data != nullptr)
-                        std::cout << "oldValue:"
-                                      << std::hex
-                                      << lvp_state.new_load_data
-                                      << " newValue:"
-                                      << new_value
-                                      << std::dec << std::endl;
-                        if ((int)inp.outputWire->LCT_value==3){
+                        int int_LCT= (int)insts_in->LCT_value;
+                        std::cout << "(Execute, load) Mem Addr: "
+                        << addr_check
+                        << " new Data Val: "<< new_value
+                        << " old Data Val: " << insts_in->LVPT_value
+                        << " LCT: " << int_LCT
+                        << " pc: "
+                        << ((pc_sip.instAddr()>> 1) & (1024-1))
+                        << " TID: " << thread_id
+                        << std::endl;
+                        if (int_LCT==3){
                             cvuResult = conValueUnit.addrMatch(*inst->pc,
                                           addr_check, thread_id);
-                        // lvp_state.is_correct = cvuResult.clear;
-                        // lvp_state.new_load_data = new (uint8_t)
-                        // [packet_size];
-                        // memcpy(lvp_state.new_load_data, packet_data,
-                        //         packet_size);
-                        // lvp_state.new_size = packet_size;
-                        // lvp_state.update_lvpu = cvuResult.update;
-                        // lvp_state.load_inst_pc = cvuResult.pc;
 
                             if (!cvuResult.clear){
-                                issued_mem_ref=false;
-                                completed_inst = false;
+                               // issued_mem_ref=false;
+                              //  completed_inst = false;
                                 if (mem_response){
-                                    std::cout << "Mem response is available"
-                                    << std::endl;
+                                   // std::cout << "Mem response is available"
+                                  //  << std::endl;
                                 }
-                                /*
-                                lsq.popResponse(mem_response);
-                                if (!mem_response){
-                                    std::cout << "Mem response was deleted"
-                                    << std::endl;
-                                  }
-                                  */
                             } else {
                                 conValueUnit.updateEntry(*inst->pc, addr_check,
                                 thread_id);
                             }
-                        } else {
-                            // lvp_state.is_correct = false;
-                            // lvp_state.update_lvpu = true;
-                            // lvp_state.load_inst_pc = inst->pc->instAddr();
-                            //std::cout <<  inp.outputWire->LVPT_value <<
-                            //std::endl;
+                        }
+                        else {
                             cvuResult.pc = inst->pc->instAddr();
                             cvuResult.update = true;
-                            if (new_value == inp.outputWire->LVPT_value) {
-                                // lvp_state.is_correct = true;
-
-                                if ((int)inp.outputWire->LCT_value==2){
+                            if (new_value == insts_in->LVPT_value) {
+                                if (int_LCT==2){
                                     conValueUnit.updateEntry(*inst->pc,
-                                    packet->getAddr(), thread_id);
+                                    addr_check, thread_id);
                                 }
                                 cvuResult.clear = false;
                             } else {
-                                // lvp_state.new_load_data = new (uint8_t)
-                                // [packet_size];
-                                // memcpy(lvp_state.new_load_data, packet_data,
-                                //     packet_size);
-                                // lvp_state.new_size = packet_size;
                                 cvuResult.clear = true;
                             }
                         }
@@ -1305,10 +1271,7 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                     } else {
                       std::cout << "Packet had no data" << std::endl;
                     }
-                    // else
-                      // std::cout << "(load) load data still nullptr."
-                      //           << " load pc:" << inst->pc->instAddr()
-                      //           << std::endl;
+
                 } else {
                     std::cout << "Packet had no data or data " << std::endl;
                 }
@@ -1598,8 +1561,7 @@ Execute::evaluate()
                           .new_size      = inp.outputWire->loadSize,
                           .load_seq_num  = inp.outputWire->loadSeqNum};
 
-    //branch.pass_fail_LCT = false;
-    //branch.new_LVPT_value = 75;
+
 
     unsigned int num_issued = 0;
 
@@ -1780,7 +1742,6 @@ Execute::evaluate()
     /* Make sure the input (if any left) is pushed */
     if (!inp.outputWire->isBubble())
         inputBuffer[inp.outputWire->threadId].pushTail();
-    // std::cout << "Value in LVPT: "
     // << inp.outputWire->LVPT_value << std::endl;
 
     branch.returnPC = lvp_state.load_inst_pc;

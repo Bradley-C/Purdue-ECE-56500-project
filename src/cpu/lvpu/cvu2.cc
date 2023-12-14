@@ -175,9 +175,13 @@ ConstantVUnit::storeClear(PCStateBase &inst_pc,
 
     return_data = (CVUReturn){.pc=inst_pc.instAddr(),
     .addr=cvu[cvu_idx][0].value,
-    .clear=false, .update=true};
+    .clear=true, .update=true};
     for (unsigned i = 0; i < numEntries; i++) {
         for (unsigned j = 0; j < numAddrperEntry; j++) {
+            //std::cout << "cvu entry: " << i
+           // << " cvu value: " << cvu[i][j].value
+           // << " cvu valid: " << cvu[i][j].valid
+           // << std::endl;
             if (cvu[i][j].value == store_addr && cvu[i][j].valid){
                 // Figure out how to pass value being stored
                 //to here as
@@ -205,6 +209,10 @@ ThreadID tid) {
     return_data = (CVUReturn){.pc=inst_pc.instAddr(), .addr=data_addr,
     .clear=true, .update=true};
     for (unsigned j = 0; j < numAddrperEntry; j++) {
+        std::cout << "CVU Mem Addr: " << cvu[cvu_idx][j].value
+        << " CVU valid bit: " << cvu[cvu_idx][j].valid
+        << " Load Mem Addr: " << data_addr
+        << std::endl;
         if (cvu[cvu_idx][j].value == data_addr && cvu[cvu_idx][j].valid){
             // Figure out how to pass value being stored to here as
             // well
