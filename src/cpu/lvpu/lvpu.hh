@@ -208,7 +208,7 @@ class LVPredUnit : public SimObject
     void drainSanityCheck() const;
 
     /**
-     * Tells the branch predictor to commit any updates until the given
+     * Tells the lvpu to commit any updates until the given
      * sequence number.
      * @param done_sn The sequence number to commit any older updates up until.
      * @param tid The thread id.

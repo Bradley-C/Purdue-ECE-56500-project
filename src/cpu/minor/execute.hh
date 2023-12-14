@@ -137,11 +137,15 @@ class Execute : public Named
         uint8_t *new_load_data;
         Addr load_inst_pc;
         unsigned new_size;
+        InstSeqNum load_seq_num;
         bool update_lvpu;
         bool is_correct;
     } LoadData;
 
     void restoreLoadData(BranchData &branch, LoadData &load);
+    void updateLoadData(LoadData &load, PacketPtr &packet, bool is_correct,
+                        bool update_lvpu, Addr load_addr,
+                        MinorDynInstPtr &inst);
 
   protected:
     /** Stage cycle-by-cycle state */

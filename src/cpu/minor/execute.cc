@@ -308,6 +308,20 @@ Execute::restoreLoadData(BranchData &branch, LoadData &load)
     branch.new_LVPT_value = load.new_load_data;
     branch.newLoadSize = load.new_size;
     branch.returnPC = load.load_inst_pc;
+    branch.loadSeqNum = load.load_seq_num;
+}
+
+void
+Execute::updateLoadData(LoadData &load, PacketPtr &packet, bool is_correct,
+                        bool update_lvpu, Addr load_addr,
+                        MinorDynInstPtr &inst)
+{
+    load.new_load_data = packet->getPtr<uint8_t>();
+    load.load_inst_pc = load_addr;
+    load.new_size = packet->getSize();
+    load.load_seq_num = inst->id.loadSeqNum;
+    load.update_lvpu = update_lvpu;
+    load.is_correct = is_correct;
 }
 
 void
@@ -1180,12 +1194,15 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                 //issued_mem_ref = true;
                 bool is_store = inst->staticInst->isStore();
                 bool is_load = inst->staticInst->isLoad();
+
                 if (is_store && packet){
-                    // std::cout << 'oldValue:'
-                    //               << std::hex << *inp.outputWire->LVPT_value
-                    //               << ' newValue:'
-                    //               << *packet->getPtr<uint8_t>()
-                    //               << std::dec << std::endl;
+                    if (inp.outputWire->LVPT_value)
+                        std::cout << 'oldValue:'
+                                      << std::hex
+                                      << *inp.outputWire->LVPT_value
+                                      << ' newValue:'
+                                      << *packet->getPtr<uint8_t>()
+                                      << std::dec << std::endl;
 
                     uint64_t addr_check =static_cast<uint64_t>(packet->getAddr
                     ());
@@ -1196,35 +1213,42 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                     new_value,
                     thread_id);
 
-                    lvp_state.is_correct = cvuResult.clear;
-                    lvp_state.new_load_data = cvuResult.value;
-                    lvp_state.new_size = packet->getSize();
-                    lvp_state.update_lvpu = cvuResult.update;
-                    lvp_state.load_inst_pc = cvuResult.pc;
+                    updateLoadData(lvp_state, packet, cvuResult.clear,
+                          cvuResult.update, cvuResult.pc, inst);
+                    // lvp_state.is_correct = cvuResult.clear;
+                    // lvp_state.new_load_data = new (uint8_t) [packet_size];
+                    // memcpy(lvp_state.new_load_data, packet_data,
+                    //         packet_size);
+                    // lvp_state.new_size = packet_size;
+                    // lvp_state.update_lvpu = cvuResult.update;
+                    // lvp_state.load_inst_pc = cvuResult.pc;
                 }
 
                 //Check if LVPT matches mem access
                 if (is_load && packet) {
+                    load_value_prediction::ConstantVUnit::CVUReturn cvuResult;
                     uint64_t addr_check = static_cast<uint64_t>
                     (packet->getAddr());
                     uint8_t *new_value = packet->getPtr<uint8_t>();
-                    //std::cout <<  inp.outputWire->LCT_value << std::endl;
-
-                    // std::cout << 'oldValue:'
-                    //               << std::hex << *inp.outputWire->LVPT_value
-                    //               << ' newValue:'
-                    //               << *new_value
-                    //               << std::dec << std::endl;
+                    if (inp.outputWire->LVPT_value)
+                        std::cout << 'oldValue:'
+                                      << std::hex
+                                      << *inp.outputWire->LVPT_value
+                                      << ' newValue:'
+                                      << *packet->getPtr<uint8_t>()
+                                      << std::dec << std::endl;
 
                     if ((int)inp.outputWire->LCT_value==3){
-                        load_value_prediction::ConstantVUnit::CVUReturn
-                        cvuResult;
                         cvuResult = conValueUnit.addrMatch(*inst->pc,
                         addr_check, thread_id);
-                        lvp_state.is_correct = cvuResult.clear;
-                        lvp_state.new_load_data = cvuResult.value;
-                        lvp_state.update_lvpu = cvuResult.update;
-                        lvp_state.load_inst_pc = cvuResult.pc;
+                        // lvp_state.is_correct = cvuResult.clear;
+                        // lvp_state.new_load_data = new (uint8_t)
+                        // [packet_size];
+                        // memcpy(lvp_state.new_load_data, packet_data,
+                        //         packet_size);
+                        // lvp_state.new_size = packet_size;
+                        // lvp_state.update_lvpu = cvuResult.update;
+                        // lvp_state.load_inst_pc = cvuResult.pc;
 
                         if (!cvuResult.clear){
                             issued_mem_ref=false;
@@ -1247,10 +1271,9 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                         }
                     }
                     else{
-                        lvp_state.is_correct = false;
-                        lvp_state.new_load_data = inp.outputWire->LVPT_value;
-                        lvp_state.update_lvpu = true;
-                        lvp_state.load_inst_pc = inst->pc->instAddr();
+                        // lvp_state.is_correct = false;
+                        // lvp_state.update_lvpu = true;
+                        // lvp_state.load_inst_pc = inst->pc->instAddr();
                         //std::cout <<  inp.outputWire->LVPT_value <<
                         //std::endl;
                         if (new_value == inp.outputWire->LVPT_value) {
@@ -1262,9 +1285,15 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
                             }
                         }
                         else{
-                            lvp_state.new_load_data = new_value;
+                            // lvp_state.new_load_data = new (uint8_t)
+                            // [packet_size];
+                            // memcpy(lvp_state.new_load_data, packet_data,
+                            //     packet_size);
+                            // lvp_state.new_size = packet_size;
                         }
                     }
+                    updateLoadData(lvp_state, packet, cvuResult.clear,
+                          cvuResult.update, cvuResult.pc, inst);
                 }
                 handleMemResponse(inst, mem_response, branch, lvp_state,
                                   fault);
@@ -1549,7 +1578,8 @@ Execute::evaluate()
     /* state for lvp data to replace in BranchData at the end so that it
      * isn't clobbered during branch updated */
     LoadData lvp_state = {.new_load_data = inp.outputWire->LVPT_value,
-                          .new_size      = inp.outputWire->loadSize};
+                          .new_size      = inp.outputWire->loadSize,
+                          .load_seq_num  = inp.outputWire->loadSeqNum};
 
     //branch.pass_fail_LCT = false;
     //branch.new_LVPT_value = 75;
