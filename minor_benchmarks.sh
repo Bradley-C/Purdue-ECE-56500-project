@@ -8,5 +8,6 @@ while IFS= read -r variable; do
     cp "$source_dir/$source_file" "$destination_dir"
     mv "$destination_dir/$source_file" "$destination_dir/stats_baseline_$variable.txt"
     # echo "source dir: $source_dir"
+    grep -E "system.cpu.loadValuePred.predictedIncorrect|system.cpu.constantVU.loadMatched|system.cpu.loadValuePred.lvpuLookups|system.cpu.dcache.overallAvgMissLatency::total|system.cpu.ipc|simSeconds" $destination_dir/stats_baseline_$variable.txt > $destination_dir/grep_$variable.txt
     wait $!
 done < "benchmarks_list.txt"
